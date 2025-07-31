@@ -1,15 +1,31 @@
 {
+  "type": "module",
   "scripts": {
     "start": "node server.js",
-    "dev": "nodemon server.js"
+    "dev": "nodemon server.js",
+    "init-db": "node scripts/initDB.js",
+    "test-email": "node scripts/testEmail.js",
+    "test-registration": "node scripts/testRegistrationEmail.js",
+    "clear-tokens": "node scripts/clearTokens.js",
+    "debug-token": "node scripts/debugToken.js",
+    "check-user": "node scripts/checkUser.js",
+    "test-onboarding": "node scripts/testOnboarding.js",
+    "reset-profile": "node scripts/resetUserProfile.js",
+    "delete-gonbik7": "node scripts/deleteUserComplete.js",
+    "debug-profile": "node scripts/debugUserProfile.js",
+    "test-profile-api": "node scripts/testProfileAPI.js",
+    "test-document": "node scripts/testDocumentUpload.js",
+    "create-test-user": "node scripts/createTestUser.js",
+    "reset-password": "node scripts/resetPassword.js"
   },
   "dependencies": {
     "bcryptjs": "^3.0.2",
     "cors": "^2.8.5",
     "dotenv": "^17.2.1",
-    "express": "^5.1.0",
+    "express": "^4.21.1",
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.16.5",
+    "multer": "^2.0.2",
     "nodemailer": "^7.0.5"
   },
   "devDependencies": {

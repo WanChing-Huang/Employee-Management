@@ -3,13 +3,12 @@ import multer from 'multer';
 import path from 'path';
 import { auth, hrOnly } from '../middleware/auth.js';
 import {
-  createUserProfile,
-  getUserProfileByUser,
-  updateUserProfile,
-  uploadUserProfileDocument,
-  getAllUserProfiles,
-  updateUserProfileStatus
-} from '../controllers/userProfileController.js';
+  uploadDocument,
+  getUserDocuments,
+  downloadDocument,
+  updateDocumentStatus,
+  deleteDocument
+} from '../controllers/documentController.js';
 
 const router = express.Router();
 
@@ -30,7 +29,8 @@ const upload = multer({
     // Allow PDF, JPG, PNG files
     if (file.mimetype === 'application/pdf' || 
         file.mimetype === 'image/jpeg' || 
-        file.mimetype === 'image/png') {
+        file.mimetype === 'image/png' ||
+        file.mimetype === 'image/jpg') {
       cb(null, true);
     } else {
       cb(new Error('Only PDF, JPG, and PNG files are allowed'), false);
@@ -44,22 +44,19 @@ const upload = multer({
 // Apply auth middleware to all routes
 router.use(auth);
 
-// Create new user profile (authenticated users)
-router.post('/', createUserProfile);
+// Upload document for user profile
+router.post('/upload/:userProfileId', upload.single('document'), uploadDocument);
 
-// Get user profile by user ID (authenticated users)
-router.get('/user/:userId', getUserProfileByUser);
+// Get all documents for a user profile
+router.get('/:userProfileId', getUserDocuments);
 
-// Update user profile (authenticated users)
-router.put('/:id', updateUserProfile);
+// Download/view document
+router.get('/download/:filename', downloadDocument);
 
-// Upload document for user profile (authenticated users)
-router.post('/:id/upload', upload.single('document'), uploadUserProfileDocument);
+// Update document status (HR only)
+router.patch('/:userProfileId/status/:documentId', hrOnly, updateDocumentStatus);
 
-// Get all user profiles (HR only)
-router.get('/', hrOnly, getAllUserProfiles);
-
-// Update user profile status (HR only)
-router.patch('/:id/status', hrOnly, updateUserProfileStatus);
+// Delete document
+router.delete('/:userProfileId', deleteDocument);
 
 export default router; 

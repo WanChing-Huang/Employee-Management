@@ -6,7 +6,6 @@ import RegistrationToken from '../models/RegistrationToken.js';
 export const createUserProfile = async (req, res) => {
   try {
     const {
-      token, // registration token
       firstName,
       lastName,
       middleName,
@@ -23,16 +22,16 @@ export const createUserProfile = async (req, res) => {
       documents
     } = req.body;
 
-    // Validate registration token and get user info
-    const registrationToken = await RegistrationToken.findOne({ token, used: false });
-    if (!registrationToken) {
-      return res.status(400).json({ error: 'Invalid or expired registration token' });
+    // Get user from auth middleware
+    const user = req.user;
+    if (!user) {
+      return res.status(401).json({ error: 'User not authenticated' });
     }
 
-    // Get user from token email
-    const user = await User.findOne({ email: registrationToken.email });
-    if (!user) {
-      return res.status(400).json({ error: 'User not found' });
+    // Check if user already has a profile
+    const existingProfile = await UserProfile.findOne({ user: user._id });
+    if (existingProfile) {
+      return res.status(400).json({ error: 'User profile already exists. Use PUT to update.' });
     }
 
     // Create user profile record with pre-filled data from registration token
@@ -57,10 +56,6 @@ export const createUserProfile = async (req, res) => {
 
     const userProfile = new UserProfile(userProfileData);
     await userProfile.save();
-
-    // Mark token as used
-    registrationToken.used = true;
-    await registrationToken.save();
 
     res.status(201).json({
       message: 'User profile created successfully',

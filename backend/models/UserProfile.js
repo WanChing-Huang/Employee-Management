@@ -59,6 +59,8 @@ const userProfileSchema = new mongoose.Schema({
         type: String,
         validate: {
             validator: function (v) {
+                // Skip validation if phone is empty/undefined (optional field)
+                if (!v || v.trim() === '') return true;
                 // Phone number format: (XXX) XXX-XXXX or XXX-XXX-XXXX
                 const phoneRegex = /^\(?([0-9]{3})\)?[-. ]?([0-9]{3})[-. ]?([0-9]{4})$/;
                 return phoneRegex.test(v);
@@ -70,6 +72,8 @@ const userProfileSchema = new mongoose.Schema({
         type: String,
         validate: {
             validator: function (v) {
+                // Skip validation if phone is empty/undefined (optional field)
+                if (!v || v.trim() === '') return true;
                 // Phone number format: (XXX) XXX-XXXX or XXX-XXX-XXXX
                 const phoneRegex = /^\(?([0-9]{3})\)?[-. ]?([0-9]{3})[-. ]?([0-9]{4})$/;
                 return phoneRegex.test(v);
@@ -192,6 +196,8 @@ const userProfileSchema = new mongoose.Schema({
             type: String,
             validate: {
                 validator: function (v) {
+                    // Skip validation if phone is empty/undefined (optional field)
+                    if (!v || v.trim() === '') return true;
                     // Phone number format: (XXX) XXX-XXXX or XXX-XXX-XXXX
                     const phoneRegex = /^\(?([0-9]{3})\)?[-. ]?([0-9]{3})[-. ]?([0-9]{4})$/;
                     return phoneRegex.test(v);
@@ -216,6 +222,8 @@ const userProfileSchema = new mongoose.Schema({
             type: String,
             validate: {
                 validator: function (v) {
+                    // Skip validation if phone is empty/undefined (optional field)
+                    if (!v || v.trim() === '') return true;
                     // Phone number format: (XXX) XXX-XXXX or XXX-XXX-XXXX
                     const phoneRegex = /^\(?([0-9]{3})\)?[-. ]?([0-9]{3})[-. ]?([0-9]{4})$/;
                     return phoneRegex.test(v);
@@ -232,6 +240,24 @@ const userProfileSchema = new mongoose.Schema({
         },
         relationship: String,
     }],
-}, { timestamps: true });
+}, { 
+  timestamps: true,
+  // Include virtual fields when converting to JSON
+  toJSON: { virtuals: true },
+  toObject: { virtuals: true }
+});
+
+// Virtual field to map _id to id for frontend compatibility
+userProfileSchema.virtual('id').get(function() {
+  return this._id.toHexString();
+});
+
+// Transform toJSON to include virtuals and clean up
+userProfileSchema.methods.toJSON = function () {
+  const profile = this.toObject({ virtuals: true });
+  delete profile._id; // Remove _id since we have id virtual field
+  delete profile.__v; // Remove version key
+  return profile;
+};
 
 export default mongoose.model('UserProfile', userProfileSchema);
