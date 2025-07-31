@@ -4,15 +4,25 @@ import UserProfile from '../models/UserProfile.js';
 import nodemailer from 'nodemailer';
 import crypto from 'crypto';
 import jwt from 'jsonwebtoken';
+import dotenv from 'dotenv';
+
+// Ensure environment variables are loaded
+dotenv.config();
 
 // Configure email transporter
-const transporter = nodemailer.createTransport({
-  service: 'gmail', // or your email service
-  auth: {
-    user: process.env.EMAIL_USER, // your email
-    pass: process.env.EMAIL_PASSWORD // your app password
-  }
-});
+const createEmailTransporter = () => {
+  return nodemailer.createTransport({
+    service: 'gmail',
+    secure: true, // Use SSL/TLS
+    auth: {
+      user: process.env.EMAIL_USER,
+      pass: process.env.EMAIL_PASS
+    },
+    tls: {
+      rejectUnauthorized: false
+    }
+  });
+};
 
 // Generate registration token and send email 
 // (HR only)
@@ -38,10 +48,11 @@ export const generateRegistrationToken = async (req, res) => {
       return res.status(400).json({ error: 'User with this email already exists' });
     }
 
-    // Check if token already exists for this email
+    // Check if token already exists for this email and delete it
     const existingToken = await RegistrationToken.findOne({ email });
     if (existingToken) {
-      return res.status(400).json({ error: 'Registration token already exists for this email' });
+      await RegistrationToken.deleteOne({ email });
+      console.log(`🗑️  Deleted existing token for ${email}`);
     }
 
     // Generate unique token
@@ -98,6 +109,7 @@ export const generateRegistrationToken = async (req, res) => {
     };
 
     // Send email
+    const transporter = createEmailTransporter();
     await transporter.sendMail(mailOptions);
 
     res.status(201).json({

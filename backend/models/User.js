@@ -29,7 +29,17 @@ const userSchema = new mongoose.Schema({
         default: 'employee' },
     firstName: String,
     lastName: String,
-}, { timestamps: true });
+}, { 
+  timestamps: true,
+  // Include virtual fields when converting to JSON
+  toJSON: { virtuals: true },
+  toObject: { virtuals: true }
+});
+
+// Virtual field to map _id to id for frontend compatibility
+userSchema.virtual('id').get(function() {
+  return this._id.toHexString();
+});
 
 // encrypt password
 userSchema.pre('save', async function (next) {
@@ -100,12 +110,14 @@ userSchema.statics.usernameExists = async function (username, excludeId = null) 
     return !!user;
 };
 
-// Transform toJSON to exclude password
+// Transform toJSON to exclude password and include virtuals
 userSchema.methods.toJSON = function () {
     //when converting to JSON, exclude the password field
     //this is useful for API responses
-    const user = this.toObject();
+    const user = this.toObject({ virtuals: true });
     delete user.password;
+    delete user._id; // Remove _id since we have id virtual field
+    delete user.__v; // Remove version key
     return user;
 };
 
