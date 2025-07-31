@@ -23,12 +23,13 @@ const userSchema = new mongoose.Schema({
         required: [true, 'Password is required'],
         minlength: [6, 'Password must be at least 6 characters']
     },
-    role: { 
-        type: String, 
-        enum: ['employee', 'hr'], 
-        default: 'employee' },
-    firstName: String,
-    lastName: String,
+    role: {
+        type: String,
+        enum: ['employee', 'hr'],
+        default: 'employee'
+    },
+    firstName: { type: String, required: [true, 'First name is required'] },
+    lastName: { type: String, required: [true, 'Last name is required'] },
 }, { timestamps: true });
 
 // encrypt password
@@ -80,7 +81,7 @@ userSchema.statics.findByEmail = function (email) {
 userSchema.statics.emailExists = async function (email, excludeId = null) {
     const query = { email: email.toLowerCase() };
     if (excludeId) {
-         // Exclude the current user's ID if provided
+        // Exclude the current user's ID if provided
         //use in update operations to avoid conflict
         query._id = { $ne: excludeId };
     }

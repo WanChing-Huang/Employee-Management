@@ -2,13 +2,12 @@ import express from 'express';
 import {
   generateRegistrationToken,
   validateRegistrationToken,
+  getRegistrationTokens,
   registerUser,
-  getAllUsers,
   getUserById,
-  updateUser,
-  deleteUser,
   updateUserRole,
-  loginUser
+  loginUser,
+  logoutUser
 } from '../controllers/userController.js';
 import { auth, hrOnly } from '../middleware/auth.js';
 
@@ -25,12 +24,11 @@ router.use(auth);
 
 // HR only routes
 router.post('/generate-token', hrOnly, generateRegistrationToken);
-router.get('/', hrOnly, getAllUsers);
-router.delete('/:id', hrOnly, deleteUser);
 router.patch('/:id/role', hrOnly, updateUserRole);
+router.get('/', hrOnly, getRegistrationTokens);
 
 // General user routes
 router.get('/:id', getUserById);
-router.put('/:id', updateUser);
+router.post('/logout', logoutUser);
 
 export default router; 

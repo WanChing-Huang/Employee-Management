@@ -1,25 +1,16 @@
 import User from '../models/User.js';
-import RegistrationToken from '../models/RegistrationToken.js';
 import UserProfile from '../models/UserProfile.js';
-import nodemailer from 'nodemailer';
+import RegistrationToken from '../models/RegistrationToken.js';
+import { sendEmail } from '../services/emailService.js';
 import crypto from 'crypto';
 import jwt from 'jsonwebtoken';
-
-// Configure email transporter
-const transporter = nodemailer.createTransport({
-  service: 'gmail', // or your email service
-  auth: {
-    user: process.env.EMAIL_USER, // your email
-    pass: process.env.EMAIL_PASSWORD // your app password
-  }
-});
 
 // Generate registration token and send email 
 // (HR only)
 export const generateRegistrationToken = async (req, res) => {
   try {
     const { email } = req.body;
-    const hrUser = req.user; 
+    const hrUser = req.user;
 
     // Check if user is HR
     if (hrUser.role !== 'hr') {
@@ -46,7 +37,7 @@ export const generateRegistrationToken = async (req, res) => {
 
     // Generate unique token
     const token = crypto.randomBytes(32).toString('hex');
-    
+
     // Set expiration (3 hours from now)
     const expiresAt = new Date();
     expiresAt.setHours(expiresAt.getHours() + 3);
@@ -66,12 +57,12 @@ export const generateRegistrationToken = async (req, res) => {
     const registrationLink = `${process.env.FRONTEND_URL}/register?token=${token}`;
 
     // Email content
-    const mailOptions = {
-      from: process.env.EMAIL_USER,
+
+     await sendEmail({
       to: email,
       subject: 'Employee Registration Invitation',
       html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
           <h2 style="color: #333;">Welcome to Our Company!</h2>
           <p>You have been invited to join our employee management system.</p>
           <p>Please click the link below to complete your registration:</p>
@@ -94,12 +85,9 @@ export const generateRegistrationToken = async (req, res) => {
             This is an automated message. Please do not reply to this email.
           </p>
         </div>
-      `
-    };
-
-    // Send email
-    await transporter.sendMail(mailOptions);
-
+      ` 
+    });
+    
     res.status(201).json({
       message: 'Registration token generated and email sent successfully',
       email,
@@ -108,9 +96,9 @@ export const generateRegistrationToken = async (req, res) => {
 
   } catch (error) {
     console.error('Error generating registration token:', error);
-    res.status(500).json({ 
+    res.status(500).json({
       error: 'Failed to generate registration token',
-      details: error.message 
+      details: error.message
     });
   }
 };
@@ -120,8 +108,8 @@ export const validateRegistrationToken = async (req, res) => {
   try {
     const { token } = req.params;
 
-    const registrationToken = await RegistrationToken.findOne({ 
-      token, 
+    const registrationToken = await RegistrationToken.findOne({
+      token,
       used: false,
       expiresAt: { $gt: new Date() }
     });
@@ -144,11 +132,11 @@ export const validateRegistrationToken = async (req, res) => {
 // Register new user with token
 export const registerUser = async (req, res) => {
   try {
-    const { token, username, password, email } = req.body;
+    const { token, email, username, password, firstName, lastName } = req.body;
 
     // Validate registration token
-    const registrationToken = await RegistrationToken.findOne({ 
-      token, 
+    const registrationToken = await RegistrationToken.findOne({
+      token,
       used: false,
       expiresAt: { $gt: new Date() }
     });
@@ -195,21 +183,23 @@ export const registerUser = async (req, res) => {
       username,
       email,
       password,
-      firstName: '', // Initialize empty
-      lastName: '', // Initialize empty
+      firstName,
+      lastName,
       role: 'employee' // Default role for new registrations
     });
 
     await user.save();
 
     // Create user profile automatically
-    // const userProfile = new UserProfile({
-    //   user: user._id,
-    //   email: user.email,
-    //   status: 'Pending'
-    // });
+    const userProfile = new UserProfile({
+      user: user._id,
+      email: user.email,
+      firstName: firstName || user.lastName||'',
+      lastName: lastName || user.lastName||'',
+      status: 'Pending'
+    });
 
-    // await userProfile.save();
+    await userProfile.save();
 
     // Mark token as used
     registrationToken.used = true;
@@ -217,9 +207,9 @@ export const registerUser = async (req, res) => {
 
     // Generate JWT token for the new user
     const jwtToken = jwt.sign(
-      { id: user._id, email: user.email, role: user.role },
+      { id: user._id, role: user.role },
       process.env.JWT_SECRET,
-      { expiresIn: '24h' }
+      { expiresIn: process.env.JWT_EXPIRES || '15d' }
     );
 
     res.status(201).json({
@@ -230,34 +220,82 @@ export const registerUser = async (req, res) => {
 
   } catch (error) {
     console.error('Error registering user:', error);
-    res.status(400).json({ 
+    res.status(400).json({
       error: 'Failed to register user',
-      details: error.message 
+      details: error.message
     });
   }
 };
 
-// Get all users
-//  (HR only)
-export const getAllUsers = async (req, res) => {
+// Login user
+export const loginUser = async (req, res) => {
   try {
-    const hrUser = req.user;
+    const { email, password } = req.body;
 
-    const users = await User.find({}).select('-password');
-    
-    res.json(users);
+    // Find user by email
+    const user = await User.findByEmail(email);
+    if (!user) {
+      return res.status(401).json({ error: 'Invalid email' });
+    }
+
+    // Check password
+    const isPasswordValid = await user.matchPassword(password);
+    if (!isPasswordValid) {
+      return res.status(401).json({ error: 'Invalid email or password' });
+    }
+
+    // Generate JWT token
+    const token = jwt.sign(
+      { id: user._id, role: user.role },
+      process.env.JWT_SECRET,
+      { expiresIn: process.env.JWT_EXPIRE || '20d' }
+    );
+
+    // Get user profile status
+    const userProfile = await UserProfile.findOne({ user: user._id });
+    const profileStatus = userProfile ? userProfile.status : 'Pending';
+
+    //use backend to determine redirect path
+    let redirectTo = '/dashboard';
+    if (user.role === 'hr') {
+      redirectTo = '/hr/dashboard';
+    } else if (['Never Submitted', 'Rejected', 'Pending'].includes(profileStatus)) {
+      redirectTo = '/onboarding';
+    }
+
+    res.json({
+      message: 'Login successful',
+      profileStatus, //or handle redirect in frontend
+      user: user.getPublicProfile(),
+      //or if hr redirect to hr dashboard || employee determine by profile status
+      token,
+      redirectTo
+    });
+
   } catch (error) {
-    console.error('Error fetching users:', error);
-    res.status(500).json({ error: 'Failed to fetch users' });
+    console.error('Error logging in user:', error);
+    res.status(500).json({ error: 'Failed to login user' });
   }
 };
+
+export const logoutUser = async (req, res) => {
+  try {
+    // Invalidate the user's session or token here if needed
+    res.json({
+      message: 'Logout successful'
+    });
+  } catch (error) {
+    console.error('Error logging out user:', error);
+    res.status(500).json({ error: 'Failed to logout user' });
+  }
+}
 
 // Get user by ID
 export const getUserById = async (req, res) => {
   try {
     const { id } = req.params;
     const user = await User.findById(id).select('-password');
-    
+
     if (!user) {
       return res.status(404).json({ error: 'User not found' });
     }
@@ -269,69 +307,46 @@ export const getUserById = async (req, res) => {
   }
 };
 
-// Update user (HR only or self)
-export const updateUser = async (req, res) => {
-  try {
-    const { id } = req.params;
-    const updateData = req.body;
-    const currentUser = req.user;
+// // Update user role (HR only or self)
+// export const updateUser = async (req, res) => {
+//   try {
+//     const { id } = req.params;
+//     const updateData = req.body;
+//     const currentUser = req.user;
 
-    // Check permissions
-    if (currentUser.role !== 'hr' && currentUser._id.toString() !== id) {
-      return res.status(403).json({ error: 'You can only update your own profile' });
-    }
+//     // Check permissions
+//     if (currentUser.role !== 'hr' && currentUser._id.toString() !== id) {
+//       return res.status(403).json({ error: 'You can only update your own profile' });
+//     }
 
-    // Don't allow updating password through this endpoint
-    delete updateData.password;
+//     // Don't allow updating password through this endpoint
+//     delete updateData.password;
 
-    const user = await User.findByIdAndUpdate(
-      id,
-      updateData,
-      { new: true, runValidators: true }
-    ).select('-password');
+//     const user = await User.findByIdAndUpdate(
+//       id,
+//       updateData,
+//       { new: true, runValidators: true }
+//     ).select('-password');
 
-    if (!user) {
-      return res.status(404).json({ error: 'User not found' });
-    }
+//     if (!user) {
+//       return res.status(404).json({ error: 'User not found' });
+//     }
 
-    res.json({
-      message: 'User updated successfully',
-      user
-    });
-  } catch (error) {
-    console.error('Error updating user:', error);
-    res.status(400).json({ 
-      error: 'Failed to update user',
-      details: error.message 
-    });
-  }
-};
+//     res.json({
+//       message: 'User updated successfully',
+//       user
+//     });
+//   } catch (error) {
+//     console.error('Error updating user:', error);
+//     res.status(400).json({ 
+//       error: 'Failed to update user',
+//       details: error.message 
+//     });
+//   }
+// };
 
-// Delete user (HR only)
-export const deleteUser = async (req, res) => {
-  try {
-    const { id } = req.params;
-    const hrUser = req.user;
 
-    // Check if user is HR
-    if (hrUser.role !== 'hr') {
-      return res.status(403).json({ error: 'Only HR representatives can delete users' });
-    }
 
-    const user = await User.findByIdAndDelete(id);
-    
-    if (!user) {
-      return res.status(404).json({ error: 'User not found' });
-    }
-
-    res.json({
-      message: 'User deleted successfully'
-    });
-  } catch (error) {
-    console.error('Error deleting user:', error);
-    res.status(500).json({ error: 'Failed to delete user' });
-  }
-};
 
 // Update user role (HR only)
 export const updateUserRole = async (req, res) => {
@@ -356,7 +371,7 @@ export const updateUserRole = async (req, res) => {
       { role },
       { new: true, runValidators: true }
     ).select('-password'); //exclude password
-    
+
 
     if (!user) {
       return res.status(404).json({ error: 'User not found' });
@@ -368,47 +383,48 @@ export const updateUserRole = async (req, res) => {
     });
   } catch (error) {
     console.error('Error updating user role:', error);
-    res.status(400).json({ 
+    res.status(400).json({
       error: 'Failed to update user role',
-      details: error.message 
+      details: error.message
     });
   }
 };
 
-// Login user
-export const loginUser = async (req, res) => {
+// Get all registration tokens (HR only)
+export const getRegistrationTokens = async (req, res) => {
   try {
-    const { email, password } = req.body;
-
-    // Find user by email
-    const user = await User.findByEmail(email);
-    if (!user) {
-      return res.status(401).json({ error: 'Invalid email or password' });
+    if (req.user.role !== 'hr') {
+      return res.status(403).json({
+        success: false,
+        error: 'Access denied'
+      });
     }
 
-    // Check password
-    const isPasswordValid = await user.matchPassword(password);
-    if (!isPasswordValid) {
-      return res.status(401).json({ error: 'Invalid email or password' });
-    }
+    const tokens = await RegistrationToken.find()
+      .sort('-createdAt')
+      .lean();
 
-    // Generate JWT token
-    const token = jwt.sign(
-      { id: user._id, email: user.email, role: user.role },
-      process.env.JWT_SECRET,
-      { expiresIn: '24h' }
+    // Add status for each token
+    const tokensWithStatus = await Promise.all(
+      tokens.map(async (token) => {
+        const user = await User.findByEmail(token.email);
+        return {
+          ...token,
+          status: token.used ? 'Used' :
+            token.expiresAt < new Date() ? 'Expired' :
+              'Active',
+          hasRegistered: !!user
+        };
+      })
     );
-    
 
-    
     res.json({
-      message: 'Login successful',
-      user: user.getPublicProfile(),
-      token
+      success: true,
+      data: tokensWithStatus
     });
-
   } catch (error) {
-    console.error('Error logging in user:', error);
-    res.status(500).json({ error: 'Failed to login user' });
+    console.error('Error fetching registration tokens:', error);
+    res.status(500).json({ error: 'Failed get all registration tokens' });
   }
-}; 
+};
+
