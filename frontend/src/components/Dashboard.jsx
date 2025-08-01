@@ -1,4 +1,32 @@
 import { useState, useEffect } from 'react';
+import {
+  Box,
+  Card,
+  CardContent,
+  CardActions,
+  Typography,
+  Button,
+  Grid,
+  Alert,
+  Chip,
+  CircularProgress,
+  IconButton,
+  Divider,
+  Avatar,
+  Paper,
+  LinearProgress,
+} from '@mui/material';
+import {
+  Refresh as RefreshIcon,
+  Person as PersonIcon,
+  Assignment as AssignmentIcon,
+  CardMembership as VisaIcon,
+  Folder as FolderIcon,
+  CheckCircle as CheckCircleIcon,
+  Schedule as ScheduleIcon,
+  Cancel as CancelIcon,
+  Warning as WarningIcon,
+} from '@mui/icons-material';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
@@ -28,12 +56,10 @@ const Dashboard = () => {
       setLastRefresh(new Date());
       
       if (isRefresh) {
-        // Show a brief success message for manual refresh
         console.log('Profile refreshed successfully');
       }
     } catch (error) {
       if (error.response?.status === 404) {
-        // User profile doesn't exist, they need to complete onboarding
         setUserProfile(null);
       } else {
         setError('Failed to load profile data');
@@ -57,7 +83,9 @@ const Dashboard = () => {
         status: 'not_started',
         message: 'Onboarding not started',
         action: 'Start Onboarding',
-        path: '/onboarding'
+        path: '/onboarding',
+        color: 'default',
+        icon: <ScheduleIcon />
       };
     }
 
@@ -67,28 +95,36 @@ const Dashboard = () => {
           status: 'pending',
           message: 'Onboarding application submitted - awaiting HR review',
           action: 'View Application',
-          path: '/onboarding'
+          path: '/onboarding',
+          color: 'warning',
+          icon: <ScheduleIcon />
         };
       case 'Rejected':
         return {
           status: 'rejected',
           message: 'Onboarding application needs changes',
           action: 'Update Application',
-          path: '/onboarding'
+          path: '/onboarding',
+          color: 'error',
+          icon: <CancelIcon />
         };
       case 'Approved':
         return {
           status: 'approved',
           message: 'Onboarding application approved',
           action: 'View Profile',
-          path: '/personal-info'
+          path: '/personal-info',
+          color: 'success',
+          icon: <CheckCircleIcon />
         };
       default:
         return {
           status: 'unknown',
           message: 'Status unknown',
           action: 'Check Application',
-          path: '/onboarding'
+          path: '/onboarding',
+          color: 'default',
+          icon: <WarningIcon />
         };
     }
   };
@@ -97,191 +133,296 @@ const Dashboard = () => {
     {
       title: 'Personal Information',
       description: 'Update your personal details and contact information',
-      icon: '👤',
+      icon: <PersonIcon />,
       path: '/personal-info',
-      enabled: userProfile?.status === 'Approved'
+      enabled: userProfile?.status === 'Approved',
+      color: 'primary'
     },
     {
       title: 'Visa Status',
       description: 'Manage your work authorization documents',
-      icon: '📄',
+      icon: <VisaIcon />,
       path: '/visa-status',
-      enabled: userProfile?.status === 'Approved' && userProfile?.workAuthorization?.visaType === 'F1(CPT/OPT)'
+      enabled: userProfile?.status === 'Approved' && userProfile?.workAuthorization?.visaType === 'F1(CPT/OPT)',
+      color: 'secondary'
     },
     {
       title: 'Documents',
       description: 'View and download your uploaded documents',
-      icon: '📁',
+      icon: <FolderIcon />,
       path: '/personal-info#documents',
-      enabled: userProfile?.status === 'Approved'
+      enabled: userProfile?.status === 'Approved',
+      color: 'info'
     }
   ];
 
   if (loading) {
     return (
-      <div className="loading">
-        <div className="spinner"></div>
-        <p>Loading dashboard...</p>
-      </div>
+      <Box
+        display="flex"
+        flexDirection="column"
+        justifyContent="center"
+        alignItems="center"
+        minHeight="60vh"
+      >
+        <CircularProgress size={60} color="primary" />
+        <Typography variant="h6" sx={{ mt: 2, color: 'text.secondary' }}>
+          Loading dashboard...
+        </Typography>
+      </Box>
     );
   }
 
   const onboardingStatus = getOnboardingStatus();
 
   return (
-    <div>
-      <div className="page-header">
-        <h1 className="page-title">Welcome, {user?.username}!</h1>
-        <p className="page-subtitle">Manage your employee information and documents</p>
-      </div>
+    <Box>
+      {/* Page Header */}
+      <Paper
+        elevation={2}
+        sx={{
+          p: 4,
+          mb: 4,
+          borderRadius: 3,
+          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+          color: 'white',
+        }}
+      >
+        <Box display="flex" alignItems="center" gap={2}>
+          <Avatar
+            sx={{
+              width: 64,
+              height: 64,
+              bgcolor: 'rgba(255,255,255,0.2)',
+              fontSize: '1.5rem',
+              fontWeight: 'bold',
+            }}
+          >
+            {user?.username?.charAt(0)?.toUpperCase() || 'U'}
+          </Avatar>
+          <Box>
+            <Typography variant="h3" component="h1" gutterBottom>
+              Welcome, {user?.username}!
+            </Typography>
+            <Typography variant="h6" sx={{ opacity: 0.9 }}>
+              Manage your employee information and documents
+            </Typography>
+          </Box>
+        </Box>
+      </Paper>
 
+      {/* Error Alert */}
       {error && (
-        <div className="alert alert-error">
+        <Alert 
+          severity="error" 
+          sx={{ mb: 3, borderRadius: 2 }}
+          onClose={() => setError(null)}
+        >
           {error}
-        </div>
+        </Alert>
       )}
 
-      {/* Onboarding Status Card */}
-      <div className="card">
-        <div className="card-header">
-          <div className="d-flex justify-between align-center">
-            <h2 className="card-title">Onboarding Status</h2>
-            <div className="d-flex gap-1 align-center">
-              <button 
-                className="btn btn-outline btn-sm"
-                onClick={handleRefresh}
-                disabled={refreshing}
-                title="Refresh status"
-              >
-                {refreshing ? '🔄' : '🔄'} {refreshing ? 'Refreshing...' : 'Refresh'}
-              </button>
-              <span className={`status-badge status-${onboardingStatus.status}`}>
-                {onboardingStatus.status.replace('_', ' ')}
-              </span>
-            </div>
-          </div>
-        </div>
-        <div className="card-body">
-          <p className="mb-1">{onboardingStatus.message}</p>
-          {userProfile?.feedback && userProfile.status === 'Rejected' && (
-            <div className="alert alert-warning">
-              <strong>HR Feedback:</strong> {userProfile.feedback}
-            </div>
-          )}
-          
-          {/* Status help text */}
-          {userProfile?.status === 'Pending' && (
-            <div className="alert alert-info">
-              <strong>📋 Waiting for HR Review:</strong> Your application is being reviewed. 
-              HR will approve or provide feedback for any needed changes. 
-              Use the refresh button above to check for updates.
-            </div>
-          )}
-          
-          <div className="d-flex justify-between align-center">
-            <button 
-              className="btn btn-primary"
-              onClick={() => navigate(onboardingStatus.path)}
-            >
-              {onboardingStatus.action}
-            </button>
-            
-            {lastRefresh && (
-              <small className="text-muted">
-                Last updated: {lastRefresh.toLocaleTimeString()}
-              </small>
-            )}
-          </div>
-        </div>
-      </div>
+      <Grid container spacing={3}>
+        {/* Onboarding Status Card */}
+        <Grid item xs={12}>
+          <Card elevation={3} sx={{ borderRadius: 3 }}>
+            <CardContent>
+              <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
+                <Box display="flex" alignItems="center" gap={2}>
+                  {onboardingStatus.icon}
+                  <Typography variant="h5" component="h2" fontWeight="bold">
+                    Onboarding Status
+                  </Typography>
+                </Box>
+                <Box display="flex" alignItems="center" gap={1}>
+                  <IconButton
+                    onClick={handleRefresh}
+                    disabled={refreshing}
+                    color="primary"
+                    size="small"
+                  >
+                    <RefreshIcon sx={{ 
+                      animation: refreshing ? 'spin 1s linear infinite' : 'none',
+                      '@keyframes spin': {
+                        '0%': { transform: 'rotate(0deg)' },
+                        '100%': { transform: 'rotate(360deg)' },
+                      },
+                    }} />
+                  </IconButton>
+                  <Chip
+                    label={onboardingStatus.status.replace('_', ' ')}
+                    color={onboardingStatus.color}
+                    variant="filled"
+                    sx={{ textTransform: 'capitalize', fontWeight: 'bold' }}
+                  />
+                </Box>
+              </Box>
 
-      {/* Quick Actions */}
-      <div className="card">
-        <div className="card-header">
-          <h2 className="card-title">Quick Actions</h2>
-        </div>
-        <div className="card-body">
-          <div className="d-flex" style={{ flexDirection: 'column', gap: '15px' }}>
-            {quickActions.map((action, index) => (
-              <div 
-                key={index}
-                className={`d-flex align-center gap-1 p-1 ${!action.enabled ? 'opacity-50' : ''}`}
-                style={{
-                  border: '1px solid #e1e8ed',
-                  borderRadius: '6px',
-                  cursor: action.enabled ? 'pointer' : 'not-allowed'
-                }}
-                onClick={() => action.enabled && navigate(action.path)}
-              >
-                <div style={{ fontSize: '24px', marginRight: '10px' }}>
-                  {action.icon}
-                </div>
-                <div className="flex-1">
-                  <h3 style={{ margin: '0 0 5px 0', fontSize: '16px', fontWeight: '600' }}>
-                    {action.title}
-                  </h3>
-                  <p style={{ margin: 0, fontSize: '14px', color: '#666' }}>
-                    {action.description}
-                  </p>
-                  {!action.enabled && (
-                    <p style={{ margin: '5px 0 0 0', fontSize: '12px', color: '#e74c3c' }}>
-                      {action.title === 'Visa Status' 
-                        ? 'Available for F1(CPT/OPT) visa holders only' 
-                        : 'Complete onboarding first'}
-                    </p>
-                  )}
-                </div>
-                {action.enabled && (
-                  <div style={{ fontSize: '18px', color: '#3498db' }}>
-                    →
-                  </div>
+              <Typography variant="body1" color="text.secondary" mb={2}>
+                {onboardingStatus.message}
+              </Typography>
+
+              {/* Feedback for rejected applications */}
+              {userProfile?.feedback && userProfile.status === 'Rejected' && (
+                <Alert severity="warning" sx={{ mb: 2, borderRadius: 2 }}>
+                  <Typography variant="subtitle2" fontWeight="bold">
+                    HR Feedback:
+                  </Typography>
+                  <Typography variant="body2">
+                    {userProfile.feedback}
+                  </Typography>
+                </Alert>
+              )}
+
+              {/* Status help text */}
+              {userProfile?.status === 'Pending' && (
+                <Alert severity="info" sx={{ mb: 2, borderRadius: 2 }}>
+                  <Typography variant="subtitle2" fontWeight="bold">
+                    📋 Waiting for HR Review:
+                  </Typography>
+                  <Typography variant="body2">
+                    Your application is being reviewed. HR will approve or provide feedback for any needed changes. 
+                    Use the refresh button above to check for updates.
+                  </Typography>
+                </Alert>
+              )}
+
+              <Box display="flex" justifyContent="space-between" alignItems="center" mt={3}>
+                <Button
+                  variant="contained"
+                  color={onboardingStatus.color}
+                  size="large"
+                  onClick={() => navigate(onboardingStatus.path)}
+                  startIcon={onboardingStatus.icon}
+                  sx={{ px: 4 }}
+                >
+                  {onboardingStatus.action}
+                </Button>
+
+                {lastRefresh && (
+                  <Typography variant="caption" color="text.secondary">
+                    Last updated: {lastRefresh.toLocaleTimeString()}
+                  </Typography>
                 )}
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
+              </Box>
+            </CardContent>
+          </Card>
+        </Grid>
 
-      {/* Profile Summary */}
-      {userProfile && (
-        <div className="card">
-          <div className="card-header">
-            <h2 className="card-title">Profile Summary</h2>
-          </div>
-          <div className="card-body">
-            <div className="form-row">
-              <div className="form-col">
-                <strong>Name:</strong> {userProfile.firstName} {userProfile.lastName}
-              </div>
-              <div className="form-col">
-                <strong>Email:</strong> {userProfile.email}
-              </div>
-            </div>
-            <div className="form-row">
-              <div className="form-col">
-                <strong>Phone:</strong> {userProfile.cellPhone || 'Not provided'}
-              </div>
-              <div className="form-col">
-                <strong>Work Authorization:</strong> {
-                  userProfile.workAuthorization?.isPermanentResidentOrCitizen 
-                    ? userProfile.workAuthorization.residentType 
-                    : userProfile.workAuthorization?.visaType
-                }
-              </div>
-            </div>
-            <div className="mt-1">
-              <button 
-                className="btn btn-outline"
-                onClick={() => navigate('/personal-info')}
-                disabled={userProfile.status !== 'Approved'}
-              >
-                View Full Profile
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
+        {/* Quick Actions */}
+        <Grid item xs={12}>
+          <Typography variant="h5" component="h2" fontWeight="bold" mb={3}>
+            Quick Actions
+          </Typography>
+          <Grid container spacing={3}>
+            {quickActions.map((action, index) => (
+              <Grid item xs={12} sm={6} md={4} key={index}>
+                <Card
+                  elevation={action.enabled ? 3 : 1}
+                  sx={{
+                    height: '100%',
+                    borderRadius: 3,
+                    transition: 'all 0.3s ease',
+                    cursor: action.enabled ? 'pointer' : 'not-allowed',
+                    opacity: action.enabled ? 1 : 0.6,
+                    '&:hover': action.enabled ? {
+                      transform: 'translateY(-4px)',
+                      boxShadow: 6,
+                    } : {},
+                  }}
+                  onClick={() => action.enabled && navigate(action.path)}
+                >
+                  <CardContent sx={{ p: 3 }}>
+                    <Box display="flex" alignItems="center" gap={2} mb={2}>
+                      <Avatar
+                        sx={{
+                          bgcolor: action.enabled ? `${action.color}.main` : 'grey.400',
+                          width: 48,
+                          height: 48,
+                        }}
+                      >
+                        {action.icon}
+                      </Avatar>
+                      <Typography variant="h6" component="h3" fontWeight="bold">
+                        {action.title}
+                      </Typography>
+                    </Box>
+                    <Typography variant="body2" color="text.secondary">
+                      {action.description}
+                    </Typography>
+                  </CardContent>
+                  <CardActions sx={{ p: 3, pt: 0 }}>
+                    <Button
+                      size="small"
+                      color={action.color}
+                      disabled={!action.enabled}
+                      sx={{ fontWeight: 'bold' }}
+                    >
+                      {action.enabled ? 'Access' : 'Requires Approval'}
+                    </Button>
+                  </CardActions>
+                </Card>
+              </Grid>
+            ))}
+          </Grid>
+        </Grid>
+
+        {/* Profile Summary */}
+        {userProfile && (
+          <Grid item xs={12}>
+            <Card elevation={3} sx={{ borderRadius: 3 }}>
+              <CardContent>
+                <Typography variant="h5" component="h2" fontWeight="bold" mb={3}>
+                  Profile Summary
+                </Typography>
+                <Grid container spacing={2}>
+                  <Grid item xs={12} sm={6} md={3}>
+                    <Box textAlign="center" p={2}>
+                      <Typography variant="h6" color="primary" fontWeight="bold">
+                        {userProfile.firstName} {userProfile.lastName}
+                      </Typography>
+                      <Typography variant="caption" color="text.secondary">
+                        Full Name
+                      </Typography>
+                    </Box>
+                  </Grid>
+                  <Grid item xs={12} sm={6} md={3}>
+                    <Box textAlign="center" p={2}>
+                      <Typography variant="h6" color="primary" fontWeight="bold">
+                        {userProfile.email}
+                      </Typography>
+                      <Typography variant="caption" color="text.secondary">
+                        Email Address
+                      </Typography>
+                    </Box>
+                  </Grid>
+                  <Grid item xs={12} sm={6} md={3}>
+                    <Box textAlign="center" p={2}>
+                      <Typography variant="h6" color="primary" fontWeight="bold">
+                        {userProfile.workAuthorization?.visaType || 'N/A'}
+                      </Typography>
+                      <Typography variant="caption" color="text.secondary">
+                        Visa Type
+                      </Typography>
+                    </Box>
+                  </Grid>
+                  <Grid item xs={12} sm={6} md={3}>
+                    <Box textAlign="center" p={2}>
+                      <Typography variant="h6" color="primary" fontWeight="bold">
+                        {userProfile.cellPhone || 'N/A'}
+                      </Typography>
+                      <Typography variant="caption" color="text.secondary">
+                        Phone Number
+                      </Typography>
+                    </Box>
+                  </Grid>
+                </Grid>
+              </CardContent>
+            </Card>
+          </Grid>
+        )}
+      </Grid>
+    </Box>
   );
 };
 

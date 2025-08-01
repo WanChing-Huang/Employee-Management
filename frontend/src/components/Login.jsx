@@ -1,4 +1,24 @@
 import { useState } from 'react';
+import {
+  Box,
+  Paper,
+  TextField,
+  Button,
+  Typography,
+  Alert,
+  Container,
+  InputAdornment,
+  IconButton,
+  Link,
+  Divider,
+} from '@mui/material';
+import {
+  Email as EmailIcon,
+  Lock as LockIcon,
+  Visibility,
+  VisibilityOff,
+  Login as LoginIcon,
+} from '@mui/icons-material';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 
@@ -8,6 +28,7 @@ const Login = () => {
     password: ''
   });
   const [errors, setErrors] = useState({});
+  const [showPassword, setShowPassword] = useState(false);
   const { login, loading, error } = useAuth();
   const navigate = useNavigate();
 
@@ -26,13 +47,17 @@ const Login = () => {
     }
   };
 
+  const handleTogglePasswordVisibility = () => {
+    setShowPassword(!showPassword);
+  };
+
   const validateForm = () => {
     const newErrors = {};
 
     if (!formData.email) {
       newErrors.email = 'Email is required';
     } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      newErrors.email = 'Email is invalid';
+      newErrors.email = 'Please enter a valid email address';
     }
 
     if (!formData.password) {
@@ -62,63 +87,163 @@ const Login = () => {
   };
 
   return (
-    <div className="auth-container">
-      <div className="auth-card">
-        <h1 className="auth-title">Welcome Back</h1>
-        <p className="text-center mb-2">Sign in to your account</p>
+    <Box
+      sx={{
+        minHeight: '100vh',
+        bgcolor: 'background.default',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        py: 3,
+      }}
+    >
+      <Container maxWidth="sm">
+        <Paper
+          elevation={8}
+          sx={{
+            p: 6,
+            borderRadius: 3,
+            textAlign: 'center',
+            background: 'linear-gradient(145deg, #ffffff 0%, #f8f9fa 100%)',
+          }}
+        >
+          {/* Header */}
+          <Box sx={{ mb: 4 }}>
+            <LoginIcon
+              sx={{
+                fontSize: 60,
+                color: 'primary.main',
+                mb: 2,
+              }}
+            />
+            <Typography variant="h3" component="h1" gutterBottom color="primary" fontWeight="bold">
+              Welcome Back
+            </Typography>
+            <Typography variant="body1" color="text.secondary">
+              Sign in to your Employee Management account
+            </Typography>
+          </Box>
 
-        {error && (
-          <div className="alert alert-error">
-            {error}
-          </div>
-        )}
+          {/* Error Alert */}
+          {error && (
+            <Alert 
+              severity="error" 
+              sx={{ 
+                mb: 3,
+                borderRadius: 2,
+                '& .MuiAlert-message': {
+                  width: '100%',
+                  textAlign: 'left',
+                }
+              }}
+            >
+              {error}
+            </Alert>
+          )}
 
-        <form onSubmit={handleSubmit}>
-          <div className="form-group">
-            <label htmlFor="email" className="form-label">Email</label>
-            <input
-              type="email"
+          {/* Login Form */}
+          <Box component="form" onSubmit={handleSubmit} noValidate>
+            <TextField
+              fullWidth
               id="email"
               name="email"
-              className={`form-control ${errors.email ? 'error' : ''}`}
+              label="Email Address"
+              type="email"
               value={formData.email}
               onChange={handleChange}
-              placeholder="Enter your email"
+              error={!!errors.email}
+              helperText={errors.email}
+              margin="normal"
+              autoComplete="email"
+              autoFocus
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <EmailIcon color={errors.email ? 'error' : 'action'} />
+                  </InputAdornment>
+                ),
+              }}
+              sx={{ mb: 2 }}
             />
-            {errors.email && <div className="form-error">{errors.email}</div>}
-          </div>
 
-          <div className="form-group">
-            <label htmlFor="password" className="form-label">Password</label>
-            <input
-              type="password"
+            <TextField
+              fullWidth
               id="password"
               name="password"
-              className={`form-control ${errors.password ? 'error' : ''}`}
+              label="Password"
+              type={showPassword ? 'text' : 'password'}
               value={formData.password}
               onChange={handleChange}
-              placeholder="Enter your password"
+              error={!!errors.password}
+              helperText={errors.password}
+              margin="normal"
+              autoComplete="current-password"
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <LockIcon color={errors.password ? 'error' : 'action'} />
+                  </InputAdornment>
+                ),
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <IconButton
+                      aria-label="toggle password visibility"
+                      onClick={handleTogglePasswordVisibility}
+                      edge="end"
+                    >
+                      {showPassword ? <VisibilityOff /> : <Visibility />}
+                    </IconButton>
+                  </InputAdornment>
+                ),
+              }}
+              sx={{ mb: 3 }}
             />
-            {errors.password && <div className="form-error">{errors.password}</div>}
-          </div>
 
-          <button
-            type="submit"
-            className="btn btn-primary btn-lg"
-            disabled={loading}
-            style={{ width: '100%' }}
-          >
-            {loading ? 'Signing in...' : 'Sign In'}
-          </button>
-        </form>
+            <Button
+              type="submit"
+              fullWidth
+              variant="contained"
+              size="large"
+              disabled={loading}
+              sx={{
+                py: 1.5,
+                fontSize: '1.1rem',
+                fontWeight: 600,
+                mb: 3,
+              }}
+            >
+              {loading ? 'Signing in...' : 'Sign In'}
+            </Button>
+          </Box>
 
-        <div className="text-center mt-2">
-          <p>
-            Don't have an account? Contact HR for a registration link.
-          </p>
-        </div>
-      </div>
-    </div>
+          {/* Divider */}
+          <Divider sx={{ my: 3 }}>
+            <Typography variant="body2" color="text.secondary">
+              Need an account?
+            </Typography>
+          </Divider>
+
+          {/* Footer */}
+          <Typography variant="body2" color="text.secondary">
+            Don't have an account?{' '}
+            <Link
+              component="button"
+              variant="body2"
+              onClick={() => navigate('/register')}
+              sx={{
+                textDecoration: 'none',
+                fontWeight: 600,
+                '&:hover': {
+                  textDecoration: 'underline',
+                },
+              }}
+            >
+              Contact HR for a registration link
+            </Link>
+          </Typography>
+        </Paper>
+      </Container>
+    </Box>
   );
 };
 

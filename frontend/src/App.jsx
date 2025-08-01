@@ -1,5 +1,8 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { ThemeProvider } from '@mui/material/styles';
+import { CssBaseline, Box, CircularProgress, Typography, Button, Paper } from '@mui/material';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
+import theme from './theme/theme';
 import Layout from './components/Layout';
 import Login from './components/Login';
 import Register from './components/Register';
@@ -18,9 +21,19 @@ const ProtectedRoute = ({ children, hrOnly = false }) => {
 
   if (loading) {
     return (
-      <div className="loading">
-        <div className="spinner"></div>
-      </div>
+      <Box
+        display="flex"
+        flexDirection="column"
+        justifyContent="center"
+        alignItems="center"
+        minHeight="100vh"
+        bgcolor="background.default"
+      >
+        <CircularProgress size={60} color="primary" />
+        <Typography variant="h6" sx={{ mt: 2, color: 'text.secondary' }}>
+          Loading...
+        </Typography>
+      </Box>
     );
   }
 
@@ -45,9 +58,19 @@ const PublicRoute = ({ children }) => {
 
   if (loading) {
     return (
-      <div className="loading">
-        <div className="spinner"></div>
-      </div>
+      <Box
+        display="flex"
+        flexDirection="column"
+        justifyContent="center"
+        alignItems="center"
+        minHeight="100vh"
+        bgcolor="background.default"
+      >
+        <CircularProgress size={60} color="primary" />
+        <Typography variant="h6" sx={{ mt: 2, color: 'text.secondary' }}>
+          Loading...
+        </Typography>
+      </Box>
     );
   }
 
@@ -58,83 +81,120 @@ const PublicRoute = ({ children }) => {
   return children;
 };
 
+// 404 Page Component
+const NotFoundPage = () => (
+  <Box
+    display="flex"
+    flexDirection="column"
+    justifyContent="center"
+    alignItems="center"
+    minHeight="100vh"
+    bgcolor="background.default"
+    px={3}
+  >
+    <Paper
+      elevation={3}
+      sx={{
+        p: 6,
+        textAlign: 'center',
+        maxWidth: 500,
+        width: '100%',
+      }}
+    >
+      <Typography variant="h1" color="primary" sx={{ fontSize: '6rem', fontWeight: 'bold', mb: 2 }}>
+        404
+      </Typography>
+      <Typography variant="h4" gutterBottom>
+        Page Not Found
+      </Typography>
+      <Typography variant="body1" color="text.secondary" sx={{ mb: 4 }}>
+        The page you're looking for doesn't exist or has been moved.
+      </Typography>
+      <Button
+        variant="contained"
+        color="primary"
+        size="large"
+        href="/login"
+        sx={{ px: 4 }}
+      >
+        Go to Login
+      </Button>
+    </Paper>
+  </Box>
+);
+
 function App() {
   return (
-    <AuthProvider>
-      <Router>
-        <Routes>
-          {/* Public Routes */}
-          <Route path="/login" element={
-            <PublicRoute>
-              <Login />
-            </PublicRoute>
-          } />
-          <Route path="/register" element={
-            <PublicRoute>
-              <Register />
-            </PublicRoute>
-          } />
+    <ThemeProvider theme={theme}>
+      <CssBaseline />
+      <AuthProvider>
+        <Router>
+          <Routes>
+            {/* Public Routes */}
+            <Route path="/login" element={
+              <PublicRoute>
+                <Login />
+              </PublicRoute>
+            } />
+            <Route path="/register" element={
+              <PublicRoute>
+                <Register />
+              </PublicRoute>
+            } />
 
-          {/* Employee Routes */}
-          <Route path="/dashboard" element={
-            <ProtectedRoute>
-              <Dashboard />
-            </ProtectedRoute>
-          } />
-          <Route path="/personal-info" element={
-            <ProtectedRoute>
-              <PersonalInformation />
-            </ProtectedRoute>
-          } />
-          <Route path="/onboarding" element={
-            <ProtectedRoute>
-              <OnboardingForm />
-            </ProtectedRoute>
-          } />
-          <Route path="/visa-status" element={
-            <ProtectedRoute>
-              <VisaStatus />
-            </ProtectedRoute>
-          } />
+            {/* Employee Routes */}
+            <Route path="/dashboard" element={
+              <ProtectedRoute>
+                <Dashboard />
+              </ProtectedRoute>
+            } />
+            <Route path="/personal-info" element={
+              <ProtectedRoute>
+                <PersonalInformation />
+              </ProtectedRoute>
+            } />
+            <Route path="/onboarding" element={
+              <ProtectedRoute>
+                <OnboardingForm />
+              </ProtectedRoute>
+            } />
+            <Route path="/visa-status" element={
+              <ProtectedRoute>
+                <VisaStatus />
+              </ProtectedRoute>
+            } />
 
-          {/* HR Routes */}
-          <Route path="/hr/dashboard" element={
-            <ProtectedRoute hrOnly={true}>
-              <HRDashboard />
-            </ProtectedRoute>
-          } />
-          <Route path="/hr/employees" element={
-            <ProtectedRoute hrOnly={true}>
-              <EmployeeProfiles />
-            </ProtectedRoute>
-          } />
-          <Route path="/hr/visa-management" element={
-            <ProtectedRoute hrOnly={true}>
-              <HRVisaManagement />
-            </ProtectedRoute>
-          } />
-          <Route path="/hr/hiring" element={
-            <ProtectedRoute hrOnly={true}>
-              <HiringManagement />
-            </ProtectedRoute>
-          } />
+            {/* HR Routes */}
+            <Route path="/hr/dashboard" element={
+              <ProtectedRoute hrOnly={true}>
+                <HRDashboard />
+              </ProtectedRoute>
+            } />
+            <Route path="/hr/employees" element={
+              <ProtectedRoute hrOnly={true}>
+                <EmployeeProfiles />
+              </ProtectedRoute>
+            } />
+            <Route path="/hr/visa-management" element={
+              <ProtectedRoute hrOnly={true}>
+                <HRVisaManagement />
+              </ProtectedRoute>
+            } />
+            <Route path="/hr/hiring" element={
+              <ProtectedRoute hrOnly={true}>
+                <HiringManagement />
+              </ProtectedRoute>
+            } />
 
-          {/* Default redirect */}
-          <Route path="/" element={<Navigate to="/login" replace />} />
-          
-          {/* 404 Not Found */}
-          <Route path="*" element={
-            <div className="auth-container">
-              <div className="auth-card text-center">
-                <h1>404 - Page Not Found</h1>
-                <p>The page you're looking for doesn't exist.</p>
-                <a href="/login" className="auth-link">Go to Login</a>
-              </div>
-            </div>
-          } />
-        </Routes>
-      </Router>
-    </AuthProvider>
+            {/* Default redirect */}
+            <Route path="/" element={<Navigate to="/login" replace />} />
+            
+            {/* 404 Not Found */}
+            <Route path="*" element={<NotFoundPage />} />
+          </Routes>
+        </Router>
+      </AuthProvider>
+    </ThemeProvider>
   );
 }
 

@@ -1,50 +1,49 @@
 import { useState, useEffect } from 'react';
+import {
+  Box,
+  Paper,
+  TextField,
+  Button,
+  Typography,
+  Alert,
+  Container,
+  InputAdornment,
+  IconButton,
+  Link,
+  Divider,
+  LinearProgress,
+} from '@mui/material';
+import {
+  Person as PersonIcon,
+  Email as EmailIcon,
+  Lock as LockIcon,
+  Visibility,
+  VisibilityOff,
+  PersonAdd as RegisterIcon,
+} from '@mui/icons-material';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 
 const Register = () => {
-  const [searchParams] = useSearchParams();
-  const token = searchParams.get('token');
-  const navigate = useNavigate();
-  const { register, validateToken, loading } = useAuth();
-
   const [formData, setFormData] = useState({
     username: '',
     email: '',
     password: '',
-    confirmPassword: '',
-    token: token || ''
+    confirmPassword: ''
   });
   const [errors, setErrors] = useState({});
-  const [tokenValid, setTokenValid] = useState(false);
-  const [tokenLoading, setTokenLoading] = useState(true);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const { register, loading, error } = useAuth();
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const token = searchParams.get('token');
 
-  // Validate token on component mount
   useEffect(() => {
-    const checkToken = async () => {
-      if (!token) {
-        setErrors({ token: 'Registration token is required' });
-        setTokenLoading(false);
-        return;
-      }
-
-      try {
-        const result = await validateToken(token);
-        setTokenValid(true);
-        setFormData(prev => ({
-          ...prev,
-          email: result.email,
-          token: token
-        }));
-      } catch (error) {
-        setErrors({ token: error.message });
-      } finally {
-        setTokenLoading(false);
-      }
-    };
-
-    checkToken();
-  }, [token, validateToken]);
+    if (!token) {
+      navigate('/login');
+    }
+  }, [token, navigate]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -61,21 +60,27 @@ const Register = () => {
     }
   };
 
+  const handleTogglePasswordVisibility = () => {
+    setShowPassword(!showPassword);
+  };
+
+  const handleToggleConfirmPasswordVisibility = () => {
+    setShowConfirmPassword(!showConfirmPassword);
+  };
+
   const validateForm = () => {
     const newErrors = {};
 
-    if (!formData.username) {
+    if (!formData.username.trim()) {
       newErrors.username = 'Username is required';
     } else if (formData.username.length < 3) {
       newErrors.username = 'Username must be at least 3 characters';
-    } else if (formData.username.length > 30) {
-      newErrors.username = 'Username must not exceed 30 characters';
     }
 
     if (!formData.email) {
       newErrors.email = 'Email is required';
     } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      newErrors.email = 'Email is invalid';
+      newErrors.email = 'Please enter a valid email address';
     }
 
     if (!formData.password) {
@@ -101,137 +106,271 @@ const Register = () => {
       return;
     }
 
-    const result = await register({
-      username: formData.username,
-      email: formData.email,
-      password: formData.password,
-      token: formData.token
-    });
+    const result = await register(formData.username, formData.email, formData.password, token);
     
     if (result.success) {
-      // Redirect to onboarding after successful registration
-      navigate('/onboarding');
-    } else {
-      setErrors({ submit: result.error });
+      navigate('/login');
     }
   };
 
-  if (tokenLoading) {
-    return (
-      <div className="auth-container">
-        <div className="auth-card text-center">
-          <div className="loading">
-            <div className="spinner"></div>
-          </div>
-          <p>Validating registration token...</p>
-        </div>
-      </div>
-    );
-  }
+  const getPasswordStrength = (password) => {
+    let strength = 0;
+    if (password.length >= 6) strength += 25;
+    if (password.length >= 8) strength += 25;
+    if (/[A-Z]/.test(password)) strength += 25;
+    if (/[0-9]/.test(password)) strength += 25;
+    return strength;
+  };
 
-  if (!tokenValid) {
-    return (
-      <div className="auth-container">
-        <div className="auth-card text-center">
-          <h1 className="auth-title">Invalid Registration Token</h1>
-          <div className="alert alert-error">
-            {errors.token || 'The registration token is invalid or has expired.'}
-          </div>
-          <p>Please contact HR for a new registration link.</p>
-          <a href="/login" className="auth-link">Go to Login</a>
-        </div>
-      </div>
-    );
-  }
+  const passwordStrength = getPasswordStrength(formData.password);
+
+  const getPasswordStrengthColor = (strength) => {
+    if (strength < 25) return 'error';
+    if (strength < 50) return 'warning';
+    if (strength < 75) return 'info';
+    return 'success';
+  };
+
+  const getPasswordStrengthText = (strength) => {
+    if (strength < 25) return 'Weak';
+    if (strength < 50) return 'Fair';
+    if (strength < 75) return 'Good';
+    return 'Strong';
+  };
 
   return (
-    <div className="auth-container">
-      <div className="auth-card">
-        <h1 className="auth-title">Create Account</h1>
-        <p className="text-center mb-2">Complete your registration</p>
-
-        {errors.submit && (
-          <div className="alert alert-error">
-            {errors.submit}
-          </div>
-        )}
-
-        <form onSubmit={handleSubmit}>
-          <div className="form-group">
-            <label htmlFor="email" className="form-label">Email</label>
-            <input
-              type="email"
-              id="email"
-              name="email"
-              className="form-control"
-              value={formData.email}
-              readOnly
-              style={{ backgroundColor: '#f8f9fa' }}
+    <Box
+      sx={{
+        minHeight: '100vh',
+        bgcolor: 'background.default',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        py: 3,
+      }}
+    >
+      <Container maxWidth="sm">
+        <Paper
+          elevation={8}
+          sx={{
+            p: 6,
+            borderRadius: 3,
+            textAlign: 'center',
+            background: 'linear-gradient(145deg, #ffffff 0%, #f8f9fa 100%)',
+          }}
+        >
+          {/* Header */}
+          <Box sx={{ mb: 4 }}>
+            <RegisterIcon
+              sx={{
+                fontSize: 60,
+                color: 'primary.main',
+                mb: 2,
+              }}
             />
-            <div className="form-text">This email was provided by HR</div>
-          </div>
+            <Typography variant="h3" component="h1" gutterBottom color="primary" fontWeight="bold">
+              Create Account
+            </Typography>
+            <Typography variant="body1" color="text.secondary">
+              Join the Employee Management System
+            </Typography>
+          </Box>
 
-          <div className="form-group">
-            <label htmlFor="username" className="form-label">Username</label>
-            <input
-              type="text"
+          {/* Error Alert */}
+          {error && (
+            <Alert 
+              severity="error" 
+              sx={{ 
+                mb: 3,
+                borderRadius: 2,
+                '& .MuiAlert-message': {
+                  width: '100%',
+                  textAlign: 'left',
+                }
+              }}
+            >
+              {error}
+            </Alert>
+          )}
+
+          {/* Registration Form */}
+          <Box component="form" onSubmit={handleSubmit} noValidate>
+            <TextField
+              fullWidth
               id="username"
               name="username"
-              className={`form-control ${errors.username ? 'error' : ''}`}
+              label="Username"
+              type="text"
               value={formData.username}
               onChange={handleChange}
-              placeholder="Choose a username"
+              error={!!errors.username}
+              helperText={errors.username}
+              margin="normal"
+              autoComplete="username"
+              autoFocus
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <PersonIcon color={errors.username ? 'error' : 'action'} />
+                  </InputAdornment>
+                ),
+              }}
+              sx={{ mb: 2 }}
             />
-            {errors.username && <div className="form-error">{errors.username}</div>}
-            <div className="form-text">3-30 characters, will be used for login</div>
-          </div>
 
-          <div className="form-group">
-            <label htmlFor="password" className="form-label">Password</label>
-            <input
-              type="password"
+            <TextField
+              fullWidth
+              id="email"
+              name="email"
+              label="Email Address"
+              type="email"
+              value={formData.email}
+              onChange={handleChange}
+              error={!!errors.email}
+              helperText={errors.email}
+              margin="normal"
+              autoComplete="email"
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <EmailIcon color={errors.email ? 'error' : 'action'} />
+                  </InputAdornment>
+                ),
+              }}
+              sx={{ mb: 2 }}
+            />
+
+            <TextField
+              fullWidth
               id="password"
               name="password"
-              className={`form-control ${errors.password ? 'error' : ''}`}
+              label="Password"
+              type={showPassword ? 'text' : 'password'}
               value={formData.password}
               onChange={handleChange}
-              placeholder="Create a password"
+              error={!!errors.password}
+              helperText={errors.password}
+              margin="normal"
+              autoComplete="new-password"
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <LockIcon color={errors.password ? 'error' : 'action'} />
+                  </InputAdornment>
+                ),
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <IconButton
+                      aria-label="toggle password visibility"
+                      onClick={handleTogglePasswordVisibility}
+                      edge="end"
+                    >
+                      {showPassword ? <VisibilityOff /> : <Visibility />}
+                    </IconButton>
+                  </InputAdornment>
+                ),
+              }}
+              sx={{ mb: 1 }}
             />
-            {errors.password && <div className="form-error">{errors.password}</div>}
-            <div className="form-text">Minimum 6 characters</div>
-          </div>
 
-          <div className="form-group">
-            <label htmlFor="confirmPassword" className="form-label">Confirm Password</label>
-            <input
-              type="password"
+            {/* Password Strength Indicator */}
+            {formData.password && (
+              <Box sx={{ mb: 2 }}>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
+                  <Typography variant="caption" color="text.secondary">
+                    Password Strength
+                  </Typography>
+                  <Typography variant="caption" color={`${getPasswordStrengthColor(passwordStrength)}.main`}>
+                    {getPasswordStrengthText(passwordStrength)}
+                  </Typography>
+                </Box>
+                <LinearProgress
+                  variant="determinate"
+                  value={passwordStrength}
+                  color={getPasswordStrengthColor(passwordStrength)}
+                  sx={{ height: 4, borderRadius: 2 }}
+                />
+              </Box>
+            )}
+
+            <TextField
+              fullWidth
               id="confirmPassword"
               name="confirmPassword"
-              className={`form-control ${errors.confirmPassword ? 'error' : ''}`}
+              label="Confirm Password"
+              type={showConfirmPassword ? 'text' : 'password'}
               value={formData.confirmPassword}
               onChange={handleChange}
-              placeholder="Confirm your password"
+              error={!!errors.confirmPassword}
+              helperText={errors.confirmPassword}
+              margin="normal"
+              autoComplete="new-password"
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <LockIcon color={errors.confirmPassword ? 'error' : 'action'} />
+                  </InputAdornment>
+                ),
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <IconButton
+                      aria-label="toggle confirm password visibility"
+                      onClick={handleToggleConfirmPasswordVisibility}
+                      edge="end"
+                    >
+                      {showConfirmPassword ? <VisibilityOff /> : <Visibility />}
+                    </IconButton>
+                  </InputAdornment>
+                ),
+              }}
+              sx={{ mb: 3 }}
             />
-            {errors.confirmPassword && <div className="form-error">{errors.confirmPassword}</div>}
-          </div>
 
-          <button
-            type="submit"
-            className="btn btn-primary btn-lg"
-            disabled={loading}
-            style={{ width: '100%' }}
-          >
-            {loading ? 'Creating Account...' : 'Create Account'}
-          </button>
-        </form>
+            <Button
+              type="submit"
+              fullWidth
+              variant="contained"
+              size="large"
+              disabled={loading}
+              sx={{
+                py: 1.5,
+                fontSize: '1.1rem',
+                fontWeight: 600,
+                mb: 3,
+              }}
+            >
+              {loading ? 'Creating Account...' : 'Create Account'}
+            </Button>
+          </Box>
 
-        <div className="text-center mt-2">
-          <p>
-            Already have an account? <a href="/login" className="auth-link">Sign in</a>
-          </p>
-        </div>
-      </div>
-    </div>
+          {/* Divider */}
+          <Divider sx={{ my: 3 }}>
+            <Typography variant="body2" color="text.secondary">
+              Already have an account?
+            </Typography>
+          </Divider>
+
+          {/* Footer */}
+          <Typography variant="body2" color="text.secondary">
+            Already registered?{' '}
+            <Link
+              component="button"
+              variant="body2"
+              onClick={() => navigate('/login')}
+              sx={{
+                textDecoration: 'none',
+                fontWeight: 600,
+                '&:hover': {
+                  textDecoration: 'underline',
+                },
+              }}
+            >
+              Sign in here
+            </Link>
+          </Typography>
+        </Paper>
+      </Container>
+    </Box>
   );
 };
 
