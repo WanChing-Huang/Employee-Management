@@ -119,7 +119,7 @@ const ReviewApplication = () => {
                 {/* avatar and name */}
               <Avatar
                 src={profile.profilePicture ? 
-                  `${import.meta.env.REACT_APP_API_URL.replace('/api', '')}/uploads/${profile.profilePicture}` : 
+                  `${import.meta.env.VITE_API_URL.replace('/api', '')}/uploads/${profile.profilePicture}` : 
                   undefined
                 }
                 sx={{ width: 80, height: 80 }}

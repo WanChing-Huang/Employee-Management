@@ -66,11 +66,33 @@ const PersonalInfo = () => {
   }, [dispatch]);
   
   // Reset form with profile data when it changes
-  useEffect(() => {
-    if (profile) {
-      reset(profile);
-    }
-  }, [profile, reset]);
+useEffect(() => {
+  if (profile) {
+    const fallbackProfile = {
+      ...profile,
+      gender: profile.gender || '',
+      dateOfBirth: profile.dateOfBirth ? new Date(profile.dateOfBirth) : null,
+      address: {
+        street: profile.address?.street || '',
+        apt: profile.address?.apt || '',
+        city: profile.address?.city || '',
+        state: profile.address?.state || '',
+        zipCode: profile.address?.zipCode || '',
+      },
+      emergencyContacts: (profile.emergencyContacts || []).map((contact) => ({
+        firstName: contact.firstName || '',
+        lastName: contact.lastName || '',
+        phone: contact.phone || '',
+        email: contact.email || '',
+        relationship: contact.relationship || '',
+      })),
+    };
+
+    reset(fallbackProfile);
+  }
+}, [profile, reset]);
+
+ 
 
   const handleEdit = (section) => {
     setEditSection(section);
@@ -201,6 +223,7 @@ const PersonalInfo = () => {
               render={({ field, fieldState: { error } }) => (
                 <DatePicker
                   {...field}
+                  value={field.value ?? null}
                   label="Date of Birth"
                   disabled={editSection !== 'name'}
                   slotProps={{
@@ -433,7 +456,7 @@ const PersonalInfo = () => {
        
       <Box display="flex" alignItems="center" gap={2} mb={3}>
         <Avatar
-          src={profilePicture ? `${import.meta.env.REACT_APP_API_URL.replace('/api', '')}/uploads/${profilePicture}` : undefined}
+          src={`${import.meta.env.VITE_API_URL.replace('/api', '')}/uploads/${profilePicture}`}
           sx={{ width: 80, height: 80 }}
         >
           {profile?.firstName?.[0]}{profile?.lastName?.[0]}

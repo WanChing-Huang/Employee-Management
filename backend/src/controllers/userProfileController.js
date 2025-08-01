@@ -72,7 +72,8 @@ console.log('📎 req.files:', req.files);
     // ✅ 將檔案欄位加入 profileData（若有檔案上傳）
     if (req.files) {
       if (req.files.profilePicture?.[0]) {
-        profileData.profilePicture = req.files.profilePicture[0].filename;
+         const uploadedPath = await uploadFile(req.files.profilePicture[0], 'profiles');
+  profileData.profilePicture = uploadedPath;
       }
       if (req.files.optReceipt?.[0]) {
         profileData.workAuthorization = profileData.workAuthorization || {};
@@ -87,6 +88,7 @@ console.log('📎 req.files:', req.files);
         profileData.workAuthorization.visaDocument = req.files.visaDocument[0].filename;
       }
     }
+   
 
     // ✅ 檢查是否已存在該用戶的資料
     const existingProfile = await UserProfile.findOne({ user: userId });

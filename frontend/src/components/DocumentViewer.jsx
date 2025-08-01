@@ -17,18 +17,23 @@ const DocumentViewer = ({ document, open, onClose }) => {
   const [loading, setLoading] = useState(false);
   const [previewUrl, setPreviewUrl] = useState(null);
 
+
+  
   const handleDownload = async () => {
     try {
       setLoading(true);
+     // const documentId = document.type === 'driverLicense' ? 'driverLicense' : (document._id || document.id);
+
       const blob = await downloadDocument(document._id || document.id);
-      const url = window.URL.createObjectURL(blob); //temporary URL for the blob to download
-      const a = document.createElement('a');
+      const url = window.URL.createObjectURL(blob); // temporary URL
+
+      const a = window.document.createElement('a');
       a.href = url;
-      a.download = `${document.type || 'document'}.pdf`;
-      document.body.appendChild(a);
+      a.download = `${ document.type || 'document'}.pdf`;
+      window.document.body.appendChild(a);
       a.click();
       window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
+      window.document.body.removeChild(a);
     } catch (error) {
       console.error('Error downloading document:', error);
     } finally {
@@ -36,9 +41,11 @@ const DocumentViewer = ({ document, open, onClose }) => {
     }
   };
 
+
   const handlePreview = async () => {
     try {
       setLoading(true);
+      //const documentId = document.type === 'driverLicense' ? 'driverLicense' : (document._id || document.id);
       const blob = await downloadDocument(document._id || document.id);
       const url = window.URL.createObjectURL(blob);
       setPreviewUrl(url); //display the document in the dialog

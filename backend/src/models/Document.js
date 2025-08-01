@@ -3,10 +3,10 @@ import mongoose from 'mongoose';
 const documentSchema = new mongoose.Schema({
   userProfile: { type: mongoose.Schema.Types.ObjectId, ref: 'UserProfile', required: true },
 
-  driverLicense: {
+  driverLicense:[{
     file: String,
     uploadedAt: { type: Date, default: Date.now }
-  },
+  }],
    //enable multiple visa documents
   visaDocuments: [{
     type: {

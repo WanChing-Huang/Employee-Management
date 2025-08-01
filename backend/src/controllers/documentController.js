@@ -49,10 +49,10 @@ export const uploadDocument = async (req, res) => {
         await deleteFile(documents.driverLicense.file);
       }
       const filePath = await uploadFile(req.file, 'documents/driver-licenses');
-      documents.driverLicense = {
-        file: filePath,
-        uploadedAt: new Date()
-      };
+      documents.driverLicense.push({
+  file: filePath,
+  uploadedAt: new Date()
+});
       await documents.save();
     } else if (['OPT Receipt', 'OPT EAD', 'I-983', 'I-20'].includes(type)) {
       // Handle visa documents
@@ -123,38 +123,53 @@ export const getMyDocuments = async (req, res, next) => {
     });
   }
 };
-
 // Download document
 export const downloadDocument = async (req, res) => {
   try {
     const { documentId } = req.params;
     const userId = req.user.userId;
 
-    // Get user profile
-    const userProfile = await UserProfile.findOne({ user: userId });
-    if (!userProfile) {
-      return res.status(404).json({
-        success: false,
-        error: 'User profile not found'
-      });
+    let userProfile;
+    let documents;
+
+    
+    if (req.user.role === 'hr') {
+      // HR by documentId 
+      documents = await Document.findOne({ 
+        $or: [
+          { 'visaDocuments._id': documentId },
+          { 'driverLicense._id': documentId }
+        ]
+      }).populate('userProfile');
+
+      if (!documents || !documents.userProfile) {
+        return res.status(404).json({ success: false, error: 'Document or user profile not found' });
+      }
+
+      userProfile = documents.userProfile;
+    } else {
+      // employee by userId
+      // Get user profile
+      userProfile = await UserProfile.findOne({ user: userId });
+      if (!userProfile) {
+        return res.status(404).json({ success: false, error: 'User profile not found' });
+      }
+
+      documents = await Document.findOne({ userProfile: userProfile._id });
+      if (!documents) {
+        return res.status(404).json({ success: false, error: 'Documents not found' });
+      }
     }
 
-    const documents = await Document.findOne({ userProfile: userProfile._id });
-    if (!documents) {
-      return res.status(404).json({
-        success: false,
-        error: 'Documents not found'
-      });
-    }
-
-    // Find the document file path
+    // fid the document file path
     let filePath;
+     const licenseDoc = documents.driverLicense.find(doc => doc._id.toString() === documentId);
+
     if (documentId === 'profilePicture') {
       filePath = userProfile.profilePicture;
-    } else if (documentId === 'driverLicense') {
-      filePath = documents.driverLicense?.file;
+    } else if (licenseDoc) {
+      filePath = licenseDoc.file;
     } else {
-      // Find in visa documents
       const visaDoc = documents.visaDocuments.find(doc => doc._id.toString() === documentId);
       if (visaDoc) {
         filePath = visaDoc.file;
@@ -162,33 +177,94 @@ export const downloadDocument = async (req, res) => {
     }
 
     if (!filePath) {
-      return res.status(404).json({
-        success: false,
-        error: 'Document not found'
-      });
+      return res.status(404).json({ success: false, error: 'Document not found' });
     }
 
-    // Check if file exists
+    // check file exists
     const fullPath = path.join(process.cwd(), 'src/uploads', filePath);
     try {
       await fs.access(fullPath);
     } catch {
-      return res.status(404).json({
-        success: false,
-        error: 'File not found on server'
-      });
+      return res.status(404).json({ success: false, error: 'File not found on server' });
     }
 
-    // Send file
+    console.log('📥 Downloading file:', fullPath);
     res.download(fullPath);
   } catch (error) {
     console.error('Error downloading document:', error);
-     res.status(500).json({
+    res.status(500).json({
       error: 'Error downloading document',
       details: error.message
     });
   }
 };
+
+// // Download document
+// export const downloadDocument = async (req, res) => {
+//   try {
+//     const { documentId } = req.params;
+//     const userId = req.user.userId;
+
+//     // Get user profile
+//     const userProfile = await UserProfile.findOne({ user: userId });
+//     if (!userProfile) {
+//       return res.status(404).json({
+//         success: false,
+//         error: 'User profile not found'
+//       });
+//     }
+
+//     const documents = await Document.findOne({ userProfile: userProfile._id });
+//     if (!documents) {
+//       return res.status(404).json({
+//         success: false,
+//         error: 'Documents not found'
+//       });
+//     }
+
+//     // Find the document file path
+//     let filePath;
+   
+//     if (documentId === 'profilePicture') {
+//       filePath = userProfile.profilePicture;
+//     } else if (documentId === 'driverLicense') {
+//       filePath = documents.driverLicense?.file;
+//     } else {
+//       // Find in visa documents
+//       const visaDoc = documents.visaDocuments.find(doc => doc._id.toString() === documentId);
+//       if (visaDoc) {
+//         filePath = visaDoc.file;
+//       }
+//     }
+//     console.log('📥 Download fullPath:', fullPath);
+//     if (!filePath) {
+//       return res.status(404).json({
+//         success: false,
+//         error: 'Document not found'
+//       });
+//     }
+
+//     // Check if file exists
+//     const fullPath = path.join(process.cwd(), 'src/uploads', filePath);
+//     try {
+//       await fs.access(fullPath);
+//     } catch {
+//       return res.status(404).json({
+//         success: false,
+//         error: 'File not found on server'
+//       });
+//     }
+
+//     // Send file
+//     res.download(fullPath);
+//   } catch (error) {
+//     console.error('Error downloading document:', error);
+//      res.status(500).json({
+//       error: 'Error downloading document',
+//       details: error.message
+//     });
+//   }
+// };
 
 // Get visa status management data
 export const getVisaStatus = async (req, res) => {

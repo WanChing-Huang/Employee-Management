@@ -27,6 +27,7 @@ const FormInput = ({
       render={({ field, fieldState: { error } }) => (
         <TextField
           {...field}
+          value={field.value ?? ''} 
           label={label}
           type={type}
           fullWidth

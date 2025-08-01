@@ -5,6 +5,7 @@ import mongoose from 'mongoose';
 import bcrypt from 'bcryptjs';
 import dotenv from 'dotenv';
 import User from './src/models/User.js'
+import UserProfile from './src/models/UserProfile.js';
 
 // Load environment variables
 dotenv.config();
@@ -43,17 +44,29 @@ const createTestUsers = async () => {
     });
     console.log('✅ HR user created:', hrUser.email);
 
-    // Create a test employee (optional)
+   // Create 5 test employees
     const employeePassword = 'Employee123!';
-    const employee = await User.create({
-      username: 'test.employee',
-      email: 'test.employee@company.com',
-      password: employeePassword,
-      role: 'employee',
-      firstName: 'Test',
-      lastName: 'Employee'
-    });
-    console.log('✅ Test employee created:', employee.email);
+    const employees = [];
+
+    for (let i = 1; i <= 20; i++) {
+      const email = `employee${i}@company.com`;
+      const username = `employee${i}`;
+      const firstName = `Emp${i}`;
+      const lastName = `Test`;
+
+      const user = await User.create({
+        username,
+        email,
+        password: employeePassword,
+        role: 'employee',
+        firstName,
+        lastName,
+      });
+
+
+
+      employees.push(user);
+      console.log(`✅ Test employee created: ${email}`);}
 
   } catch (error) {
     console.error('❌ Error creating users:', error);
@@ -110,6 +123,85 @@ const createUploadDirs = async () => {
   }
 };
 
+
+const createTestUsersWithProfiles = async () => {
+  const testEmployees = Array.from({ length: 20 }).map((_, i) => {
+    const num = i + 1;
+    return {
+      username: `emp${num}`,
+      email: `employee${num}@company.com`,
+      password: `EmpPass123!`,
+      role: 'employee',
+      firstName: `Emp${num}`,
+      lastName: 'Test',
+      profile: {
+        email: `employee${num}@company.com`,
+        firstName: `Emp${num}`,
+        lastName: 'Test',
+        preferredName: `ET${num}`,
+        address: {
+          buildingApt: `Apt 10${num}`,
+          streetName: `${100 + num} Test St`,
+          city: 'Testville',
+          state: 'TX',
+          zip: `88500`
+        },
+        cellPhone: `555-123-45${num.toString().padStart(2, '0')}`,
+        workPhone: `555-987-65${num.toString().padStart(2, '0')}`,
+        ssn: `123-45-60${num.toString().padStart(2, '0')}`,
+        dateOfBirth: new Date(1990, 0, 1),
+        gender: 'Male',
+        workAuthorization: {
+          isPermanentResidentOrCitizen: false,
+          visaType: 'H1-B',
+          startDate: new Date(2024, 0, 1),
+          endDate: new Date(2026, 0, 1)
+        },
+        reference: {
+          firstName: 'Ref',
+          lastName: `Test${num}`,
+          phone: `555-000-000${num}`,
+          email: `ref${num}@test.com`,
+          relationship: 'Friend'
+        },
+        emergencyContacts: [
+          {
+            firstName: 'Emer',
+            lastName: `Contact${num}`,
+            phone: `555-111-110${num}`,
+            email: `emergency${num}@test.com`,
+            relationship: 'Parent'
+          }
+        ]
+      }
+    };
+  });
+
+  for (const emp of testEmployees) {
+    const exists = await User.findOne({ email: emp.email });
+    if (exists) {
+      console.log(`⚠️  User ${emp.email} already exists`);
+      continue;
+    }
+
+    const hashedPassword = await bcrypt.hash(emp.password, 10);
+    const user = await User.create({
+      username: emp.username,
+      email: emp.email,
+      password: hashedPassword,
+      role: emp.role,
+      firstName: emp.firstName,
+      lastName: emp.lastName
+    });
+
+    await UserProfile.create({
+      user: user._id,
+      ...emp.profile
+    });
+
+    console.log(`✅ Created test employee: ${emp.email}`);
+  }
+};
 // Main setup function
 const setup = async () => {
   console.log('🚀 Starting database setup...\n');
@@ -117,6 +209,7 @@ const setup = async () => {
   await connectDB();
   await createTestUsers();
   await createUploadDirs();
+  await createTestUsersWithProfiles();
   
   console.log('\n✅ Setup complete!');
   console.log('\n📝 Test Credentials:');

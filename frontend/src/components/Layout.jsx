@@ -1,6 +1,8 @@
 import React from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
+import { useEffect ,useState} from 'react';
+
 import {
   AppBar,
   Box,
@@ -22,15 +24,41 @@ import {
   Logout as LogoutIcon,
 } from '@mui/icons-material';
 import { logout } from '../store/authSlice';
+import { fetchMyProfile } from '../store/profileSlice';
+import UserProfile from '../../../backend/src/models/UserProfile';
+
+
+
 
 const Layout = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const dispatch = useDispatch();
   const { user } = useSelector((state) => state.auth);
+  const [profile, setProfile] = useState(null);
+  //const profile = useSelector((state) => state.profile?.data);
+  
   const [anchorEl, setAnchorEl] = React.useState(null);
-
+ 
+  
   const isHR = user?.role === 'hr';
+  //const userProfile =  dispatch(fetchMyProfile());;
+
+  useEffect(() => {
+  const loadProfile = async () => {
+    try {
+      const profile = await dispatch(fetchMyProfile()).unwrap();
+      setProfile(profile); 
+      console.log('✅ user profile:', profile);
+    } catch (error) {
+      console.error('❌ Failed to fetch profile:', error);
+    }
+  };
+
+  loadProfile();
+}, [dispatch]);
+
+  //console.log(profile);
 
   const handleMenu = (event) => {
     setAnchorEl(event.currentTarget);
@@ -85,15 +113,16 @@ const Layout = () => {
 
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
             <Typography variant="body2">
-              {user?.firstName} {user?.lastName} ({isHR ? 'HR' : 'Employee'})
+              {profile?.userProfile.firstName} {profile?.userProfile?.lastName} ({isHR ? 'HR' : 'Employee'})
             </Typography>
             <IconButton
               size="large"
               onClick={handleMenu}
               color="inherit"
             >
-              <Avatar sx={{ width: 32, height: 32 }}>
-                {user?.firstName?.[0]}{user?.lastName?.[0]}
+              <Avatar sx={{ width: 32, height: 32 }}
+                src={profile?.userProfile?.profilePicture ? `${import.meta.env.VITE_API_URL.replace('/api', '')}/uploads/${profile.userProfile.profilePicture}` : undefined}> 
+                {profile?.firstName?.[0]}{profile?.lastName?.[0]}
               </Avatar>
             </IconButton>
             <Menu

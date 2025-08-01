@@ -91,7 +91,7 @@ const HiringManagement = () => {
   };
 
   const handleCopyLink = (token) => {
-    const link = `${import.meta.env.REACT_APP_FRONTEND_URL}/register?token=${token}`;
+    const link = `${import.meta.env.VITE_FRONTEND_URL}/register?token=${token}`;
     navigator.clipboard.writeText(link);
     // You could add a snackbar notification here
   };
