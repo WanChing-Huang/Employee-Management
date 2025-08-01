@@ -113,7 +113,7 @@ const Layout = () => {
 
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
             <Typography variant="body2">
-              {profile?.userProfile.firstName} {profile?.userProfile?.lastName} ({isHR ? 'HR' : 'Employee'})
+              {profile?.userProfile?.firstName || ''} {profile?.userProfile?.lastName ||""} ({isHR ? 'HR' : 'Employee'})
             </Typography>
             <IconButton
               size="large"
