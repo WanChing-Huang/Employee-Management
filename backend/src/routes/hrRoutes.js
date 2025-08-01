@@ -6,7 +6,9 @@ import {
   getVisaStatusInProgress,
   getVisaStatusAll,
   getEmployeeForReview,
-  deleteUser
+  deleteUser,
+  getUserProfileById
+
 } from '../controllers/hrController.js';
 import { auth, hrOnly } from '../middleware/auth.js';
 
@@ -22,6 +24,7 @@ router.get('/dashboard/stats', getDashboardStats);
 router.get('/employees/summary', getEmployeeSummary);
 router.get('/employees/search', searchEmployees);
 router.delete('/employees/:id', deleteUser);
+router.get('/:id', getUserProfileById);
 
 // Visa status management
 router.get('/visa-status/in-progress', getVisaStatusInProgress);

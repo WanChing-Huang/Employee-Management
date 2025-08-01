@@ -368,3 +368,21 @@ export const getAllUsers = async (req, res) => {
   }
 };
 
+// Get employee profile by ID (for HR review)
+export const getUserProfileById = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const profile = await UserProfile.findById(id).populate('user', 'email firstName lastName');
+
+    if (!profile) {
+      return res.status(404).json({ error: 'Employee profile not found' });
+    }
+
+    res.json(profile);
+  } catch (error) {
+    console.error('Error fetching profile by ID:', error);
+    res.status(500).json({ error: 'Failed to fetch employee profile' });
+  }
+};
+

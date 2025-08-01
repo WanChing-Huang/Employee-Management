@@ -57,29 +57,29 @@ const userProfileSchema = new mongoose.Schema({
     },
     cellPhone: {
         type: String,
-        validate: {
-            validator: function (v) {
-                // Phone number format: (XXX) XXX-XXXX or XXX-XXX-XXXX
-                const phoneRegex = /^\(?([0-9]{3})\)?[-. ]?([0-9]{3})[-. ]?([0-9]{4})$/;
-                return phoneRegex.test(v);
-            },
-            message: 'Phone number must be in format (XXX) XXX-XXXX or XXX-XXX-XXXX'
-        }
+        // validate: {
+        //     validator: function (v) {
+        //         // Phone number format: (XXX) XXX-XXXX or XXX-XXX-XXXX
+        //         const phoneRegex = /^\(?([0-9]{3})\)?[-. ]?([0-9]{3})[-. ]?([0-9]{4})$/;
+        //         return phoneRegex.test(v);
+        //     },
+        //     message: 'Phone number must be in format (XXX) XXX-XXXX or XXX-XXX-XXXX'
+        // }
     },
     workPhone: {
         type: String,
-        validate: {
-            validator: function (v) {
-                // Phone number format: (XXX) XXX-XXXX or XXX-XXX-XXXX
-                const phoneRegex = /^\(?([0-9]{3})\)?[-. ]?([0-9]{3})[-. ]?([0-9]{4})$/;
-                return phoneRegex.test(v);
-            },
-            message: 'Phone number must be in format (XXX) XXX-XXXX or XXX-XXX-XXXX'
-        }
+        // validate: {
+        //     validator: function (v) {
+        //         // Phone number format: (XXX) XXX-XXXX or XXX-XXX-XXXX
+        //         const phoneRegex = /^\(?([0-9]{3})\)?[-. ]?([0-9]{3})[-. ]?([0-9]{4})$/;
+        //         return phoneRegex.test(v);
+        //     },
+        //     message: 'Phone number must be in format (XXX) XXX-XXXX or XXX-XXX-XXXX'
+        // }
     },
     ssn: String,
     dateOfBirth: Date,
-    gender: { type: String, enum: ['male', 'female', 'prefer not to say'] },
+    gender: { type: String, enum: ['Male', 'Female', 'Do not wish to answer'] },
 
     workAuthorization: {
         // Question: "Permanent resident or citizen of the U.S.?"
@@ -190,14 +190,14 @@ const userProfileSchema = new mongoose.Schema({
         middleName: String,
         phone: {
             type: String,
-            validate: {
-                validator: function (v) {
-                    // Phone number format: (XXX) XXX-XXXX or XXX-XXX-XXXX
-                    const phoneRegex = /^\(?([0-9]{3})\)?[-. ]?([0-9]{3})[-. ]?([0-9]{4})$/;
-                    return phoneRegex.test(v);
-                },
-                message: 'Phone number must be in format (XXX) XXX-XXXX or XXX-XXX-XXXX'
-            }
+            // validate: {
+            //     validator: function (v) {
+            //         // Phone number format: (XXX) XXX-XXXX or XXX-XXX-XXXX
+            //         const phoneRegex = /^\(?([0-9]{3})\)?[-. ]?([0-9]{3})[-. ]?([0-9]{4})$/;
+            //         return phoneRegex.test(v);
+            //     },
+            //     message: 'Phone number must be in format (XXX) XXX-XXXX or XXX-XXX-XXXX'
+            // }
         },
         email: {
             type: String,
@@ -214,14 +214,14 @@ const userProfileSchema = new mongoose.Schema({
         middleName: String,
         phone: {
             type: String,
-            validate: {
-                validator: function (v) {
-                    // Phone number format: (XXX) XXX-XXXX or XXX-XXX-XXXX
-                    const phoneRegex = /^\(?([0-9]{3})\)?[-. ]?([0-9]{3})[-. ]?([0-9]{4})$/;
-                    return phoneRegex.test(v);
-                },
-                message: 'Phone number must be in format (XXX) XXX-XXXX or XXX-XXX-XXXX'
-            }
+            // validate: {
+            //     validator: function (v) {
+            //         // Phone number format: (XXX) XXX-XXXX or XXX-XXX-XXXX
+            //         const phoneRegex = /^\(?([0-9]{3})\)?[-. ]?([0-9]{3})[-. ]?([0-9]{4})$/;
+            //         return phoneRegex.test(v);
+            //     },
+            //     message: 'Phone number must be in format (XXX) XXX-XXXX or XXX-XXX-XXXX'
+            // }
         },
         email: {
             type: String,

@@ -15,8 +15,9 @@ export const auth = async (req, res, next) => {
     if (!user) {
       return res.status(401).json({ error: 'Invalid token.' });
     }
-
-    req.user = user;
+    
+        // Attach both _id and userId for compatibility
+    req.user = { ...user.toObject(), userId: user._id };
     next();
   } catch (error) {
     res.status(401).json({ error: 'Invalid token.' });

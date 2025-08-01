@@ -39,99 +39,177 @@ export const getMyProfile = async (req, res) => {
 };
 
 // Submit or update onboarding application
+// Submit or update onboarding application
 export const submitOnboardingApplication = async (req, res) => {
   try {
     const userId = req.user.userId;
-    const profileData = req.body;
-
-    // Check if profile exists
-    let userProfile = await UserProfile.findOne({ user: userId });
-
-    if (userProfile) {
-      // Can only update if status is 'Never Submitted' or 'Rejected'
-      if (userProfile.status === 'Approved') {
-        return res.status(400).json({
-          success: false,
-          error: 'Cannot modify approved application'
-        });
-      }
-
-      if (userProfile.status === 'Pending') {
-        return res.status(400).json({
-          success: false,
-          error: 'Cannot modify pending application'
-        });
-      }
-
-      // Update existing profile
-      Object.assign(userProfile, profileData);
-      userProfile.status = 'Pending';
-      userProfile.feedback = ''; // Clear previous feedback
-      await userProfile.save();
-    } else {
-      // Create new profile
-      userProfile = await UserProfile.create({
-        user: userId,
-        ...profileData,
-        status: 'Pending'
-      });
+  
+    // ✅ 確保有傳資料
+    if (!req.body.data) {
+      return res.status(400).json({ message: 'Missing profile data' });
+    }
+   console.log('📦 req.body:', req.body);
+console.log('📎 req.files:', req.files);
+    // ✅ 將前端傳來的 JSON 字串轉為物件
+    let profileData;
+    try {
+      profileData = JSON.parse(req.body.data);
+    } catch (err) {
+      return res.status(400).json({ message: 'Invalid JSON format in profile data' });
     }
 
-    // Handle file uploads if any
-    if (req.files) {
-      let documents = await Document.findOne({ userProfile: userProfile._id });
-      if (!documents) {
-        documents = await Document.create({ userProfile: userProfile._id });
-      }
-
-      // Profile picture
-      if (req.files.profilePicture) {
-        const profilePicPath = await uploadFile(req.files.profilePicture, 'profiles');
-        userProfile.profilePicture = profilePicPath;
-        await userProfile.save();
-      }
-
-      // Driver's license
-      if (req.files.driverLicense) {
-        const driverLicensePath = await uploadFile(req.files.driverLicense, 'documents/driver-licenses');
-        documents.driverLicense = {
-          file: driverLicensePath,
-          uploadedAt: new Date()
-        };
-      }
-
-      // Work authorization documents
-      if (req.files.workAuthorization) {
-        const workAuthPath = await uploadFile(req.files.workAuthorization, 'documents/work-authorizations');
-
-        // Determine document type based on visa type
-        const visaType = profileData.workAuthorization?.visaType;
-        if (visaType === 'F1(CPT/OPT)') {
-          documents.visaDocuments.push({
-            type: 'OPT Receipt',
-            file: workAuthPath,
-            status: 'Pending'
-          });
+    // ✅ 將巢狀欄位也 parse（如果是字串）
+    ['address', 'reference', 'workAuthorization', 'emergencyContacts'].forEach((field) => {
+      if (typeof profileData[field] === 'string') {
+        try {
+          profileData[field] = JSON.parse(profileData[field]);
+        } catch (err) {
+          console.warn(`Failed to parse field ${field}`, err);
         }
       }
+    });
 
-      await documents.save();
+    // ✅ 將檔案欄位加入 profileData（若有檔案上傳）
+    if (req.files) {
+      if (req.files.profilePicture?.[0]) {
+        profileData.profilePicture = req.files.profilePicture[0].filename;
+      }
+      if (req.files.optReceipt?.[0]) {
+        profileData.workAuthorization = profileData.workAuthorization || {};
+        profileData.workAuthorization.optReceipt = req.files.optReceipt[0].filename;
+      }
+      if (req.files.otherDoc?.[0]) {
+        profileData.workAuthorization = profileData.workAuthorization || {};
+        profileData.workAuthorization.otherDoc = req.files.otherDoc[0].filename;
+      }
+      if (req.files.visaDocument?.[0]) {
+        profileData.workAuthorization = profileData.workAuthorization || {};
+        profileData.workAuthorization.visaDocument = req.files.visaDocument[0].filename;
+      }
     }
 
-    res.json({
-      message: 'Onboarding application submitted successfully',
-      profile: userProfile,
-      status: userProfile.status
+    // ✅ 檢查是否已存在該用戶的資料
+    const existingProfile = await UserProfile.findOne({ user: userId });
 
-    });
+    let savedProfile;
+    if (existingProfile) {
+      // 更新資料
+      existingProfile.set(profileData);
+      savedProfile = await existingProfile.save();
+    } else {
+      // 新增資料
+      savedProfile = await UserProfile.create({ ...profileData, user: userId });
+    }
+
+    res.status(200).json({ message: 'Onboarding application submitted successfully', profile: savedProfile });
   } catch (error) {
     console.error('Error submitting onboarding application:', error);
-    res.status(500).json({
-      error: 'Error submitting onboarding application',
-      details: error.message
-    });
+    res.status(500).json({ message: 'Failed to submit onboarding application', error: error.message });
   }
 };
+
+// export const submitOnboardingApplication = async (req, res) => {
+//   try {
+//     const userId = req.user.userId;
+//     const profileData = req.body;
+    
+//         ['address', 'reference', 'workAuthorization', 'emergencyContacts'].forEach((field) => {
+//       if (typeof profileData[field] === 'string') {
+//         try {
+//           profileData[field] = JSON.parse(profileData[field]);
+//         } catch (err) {
+//           console.warn(`Failed to parse ${field}`, err);
+//         }
+//       }
+//     });
+//     // Check if profile exists
+//     let userProfile = await UserProfile.findOne({ user: userId });
+
+//     if (userProfile) {
+//       // Can only update if status is 'Never Submitted' or 'Rejected'
+//       if (userProfile.status === 'Approved') {
+//         return res.status(400).json({
+//           success: false,
+//           error: 'Cannot modify approved application'
+//         });
+//       }
+
+//       if (userProfile.status === 'Pending') {
+//         return res.status(400).json({
+//           success: false,
+//           error: 'Cannot modify pending application'
+//         });
+//       }
+
+//       // Update existing profile
+//       Object.assign(userProfile, profileData);
+//       userProfile.status = 'Pending';
+//       userProfile.feedback = ''; // Clear previous feedback
+//       await userProfile.save();
+//     } else {
+//       // Create new profile
+//       userProfile = await UserProfile.create({
+//         user: userId,
+//         ...profileData,
+//         status: 'Pending'
+//       });
+//     }
+
+//     // Handle file uploads if any
+//     if (req.files) {
+//       let documents = await Document.findOne({ userProfile: userProfile._id });
+//       if (!documents) {
+//         documents = await Document.create({ userProfile: userProfile._id });
+//       }
+
+//       // Profile picture
+//       if (req.files.profilePicture) {
+//         const profilePicPath = await uploadFile(req.files.profilePicture, 'profiles');
+//         userProfile.profilePicture = profilePicPath;
+//         await userProfile.save();
+//       }
+
+//       // Driver's license
+//       if (req.files.driverLicense) {
+//         const driverLicensePath = await uploadFile(req.files.driverLicense, 'documents/driver-licenses');
+//         documents.driverLicense = {
+//           file: driverLicensePath,
+//           uploadedAt: new Date()
+//         };
+//       }
+
+//       // Work authorization documents
+//       if (req.files.workAuthorization) {
+//         const workAuthPath = await uploadFile(req.files.workAuthorization, 'documents/work-authorizations');
+
+//         // Determine document type based on visa type
+//         const visaType = profileData.workAuthorization?.visaType;
+//         if (visaType === 'F1(CPT/OPT)') {
+//           documents.visaDocuments.push({
+//             type: 'OPT Receipt',
+//             file: workAuthPath,
+//             status: 'Pending'
+//           });
+//         }
+//       }
+
+//       await documents.save();
+//     }
+
+//     res.json({
+//       message: 'Onboarding application submitted successfully',
+//       profile: userProfile,
+//       status: userProfile.status
+
+//     });
+//   } catch (error) {
+//     console.error('Error submitting onboarding application:', error);
+//     res.status(500).json({
+//       error: 'Error submitting onboarding application',
+//       details: error.message
+//     });
+//   }
+// };
 
 // Update personal information (for approved users)
 export const updatePersonalInfo = async (req, res) => {

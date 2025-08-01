@@ -144,9 +144,12 @@ export const uploadMiddleware = {
   workAuthorization: upload.single('workAuthorization'),
   visaDocument: upload.single('visaDocument'),
   multiple: upload.fields([
-    { name: 'profilePicture', maxCount: 1 },
-    { name: 'driverLicense', maxCount: 1 },
-    { name: 'workAuthorization', maxCount: 1 }
+     { name: 'profilePicture', maxCount: 1 },
+  { name: 'driverLicense', maxCount: 1 },
+  { name: 'workAuthorization', maxCount: 1 },
+  { name: 'visaDocument', maxCount: 1 },
+  { name: 'optReceipt', maxCount: 1 },
+  { name: 'otherDoc', maxCount: 1 }
   ])
 };
 

@@ -4,6 +4,7 @@
 import mongoose from 'mongoose';
 import bcrypt from 'bcryptjs';
 import dotenv from 'dotenv';
+import User from './src/models/User.js'
 
 // Load environment variables
 dotenv.config();
@@ -19,17 +20,6 @@ const connectDB = async () => {
   }
 };
 
-// User Schema (simplified for setup)
-const userSchema = new mongoose.Schema({
-  username: String,
-  email: String,
-  password: String,
-  role: String,
-  firstName: String,
-  lastName: String
-}, { timestamps: true });
-
-const User = mongoose.model('User', userSchema);
 
 // Create test users
 const createTestUsers = async () => {

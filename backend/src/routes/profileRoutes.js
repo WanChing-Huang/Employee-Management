@@ -18,6 +18,7 @@ router.use(auth);
 
 // Employee routes
 router.get('/my-profile', getMyProfile);
+// router.post('/onboarding', uploadMiddleware.multiple, submitOnboardingApplication);
 router.post('/onboarding', uploadMiddleware.multiple, submitOnboardingApplication);
 router.put('/personal-info/:section', updatePersonalInfo);
 
