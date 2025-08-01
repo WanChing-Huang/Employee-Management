@@ -107,3 +107,8 @@ export const sendReminder = async (profileId, nextStep) => {
     throw new Error(error.response?.data?.error || 'Failed to send reminder');
   }
 };
+
+export const getDocumentsByProfileId = async (profileId) => {
+  const response = await api.get(`/documents/by-profile/${profileId}`);
+  return response.data;
+};

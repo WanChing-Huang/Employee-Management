@@ -67,6 +67,7 @@ const Register = () => {
 
   const onSubmit = async (data) => {
     try {
+      
       await dispatch(registerUser({
         token,
         email: data.email,

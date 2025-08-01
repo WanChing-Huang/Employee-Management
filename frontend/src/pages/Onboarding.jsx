@@ -49,7 +49,7 @@ const Onboarding = () => {
     workAuthorization: null,
   });
 
-  const { control, handleSubmit, formState: { errors: _errors }, watch, setValue, trigger,reset } = useForm({
+  const { control, handleSubmit, formState: { errors: _errors }, watch, setValue, trigger, reset } = useForm({
     defaultValues: {
       firstName: user?.firstName || '',
       lastName: user?.lastName || '',
@@ -94,7 +94,7 @@ const Onboarding = () => {
       }],
     },
   });
-
+  const [hasNavigated, setHasNavigated] = useState(false);
   // const isPermanentResident = watch('workAuthorization.isPermanentResidentOrCitizen');
   const isPermanentResident = watch('workAuthorization.isPermanentResidentOrCitizen');
   const visaType = watch('workAuthorization.visaType');
@@ -103,7 +103,7 @@ const Onboarding = () => {
   useEffect(() => {
     dispatch(fetchMyProfile());
   }, [dispatch]);
-  
+
 
 
   useEffect(() => {
@@ -116,42 +116,43 @@ const Onboarding = () => {
   }, [isPermanentResident, setValue]);
   // Redirect if the user is already finish onboarding
   useEffect(() => {
-    if (status === 'Approved') {
-      navigate('/dashboard');
+    if (status === 'Approved' && !hasNavigated) {
+      setHasNavigated(true); // Prevent multiple redirects
+      navigate('/dashboard', { replace: true });
     }
-  }, [status, navigate]);
+  }, [status, navigate, hasNavigated]);
 
   // Populate form with existing profile data if available
- useEffect(() => {
-  if (profile && (status === 'Rejected' || status === 'Pending')) {
-    const fallbackProfile = {
-      ...profile,
-      gender: profile.gender || '',
-      dateOfBirth: profile.dateOfBirth ? new Date(profile.dateOfBirth) : null,
-      address: {
-        streetName: profile.address?.streetName || '',
-        city: profile.address?.city || '',
-        state: profile.address?.state || '',
-        zip: profile.address?.zip || '',
-        buildingApt: profile.address?.buildingApt || '',
-      },
-      emergencyContacts: (profile.emergencyContacts || []).map((c) => ({
-        ...c,
-        relationship: c.relationship || '',
-      })),
-      workAuthorization: {
-        ...profile.workAuthorization,
-        isPermanentResidentOrCitizen: profile.workAuthorization?.isPermanentResidentOrCitizen ?? false,
-        residentType: profile.workAuthorization?.residentType || '',
-        visaType: profile.workAuthorization?.visaType || '',
-        startDate: profile.workAuthorization?.startDate ? new Date(profile.workAuthorization?.startDate) : null,
-        endDate: profile.workAuthorization?.endDate ? new Date(profile.workAuthorization?.endDate) : null,
-      },
-    };
+  useEffect(() => {
+    if (profile && (status === 'Rejected' || status === 'Pending')) {
+      const fallbackProfile = {
+        ...profile,
+        gender: profile.gender || '',
+        dateOfBirth: profile.dateOfBirth ? new Date(profile.dateOfBirth) : null,
+        address: {
+          streetName: profile.address?.streetName || '',
+          city: profile.address?.city || '',
+          state: profile.address?.state || '',
+          zip: profile.address?.zip || '',
+          buildingApt: profile.address?.buildingApt || '',
+        },
+        emergencyContacts: (profile.emergencyContacts || []).map((c) => ({
+          ...c,
+          relationship: c.relationship || '',
+        })),
+        workAuthorization: {
+          ...profile.workAuthorization,
+          isPermanentResidentOrCitizen: profile.workAuthorization?.isPermanentResidentOrCitizen ?? false,
+          residentType: profile.workAuthorization?.residentType || '',
+          visaType: profile.workAuthorization?.visaType || '',
+          startDate: profile.workAuthorization?.startDate ? new Date(profile.workAuthorization?.startDate) : null,
+          endDate: profile.workAuthorization?.endDate ? new Date(profile.workAuthorization?.endDate) : null,
+        },
+      };
 
-    reset(fallbackProfile);
-  }
-}, [profile, status, reset]);
+      reset(fallbackProfile);
+    }
+  }, [profile, status, reset]);
 
 
   const handleNext = async () => {
@@ -180,6 +181,7 @@ const Onboarding = () => {
 
       const formData = {
         ...cleanedData,
+        status: 'Pending',
         files, // sent to  profile.js 
       };
       console.log('Submitting formData:', formData); // check the form data before submission

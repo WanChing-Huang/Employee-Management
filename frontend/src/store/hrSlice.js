@@ -98,6 +98,14 @@ export const sendReminder = createAsyncThunk(
   }
 );
 
+export const fetchDocumentsByProfile = createAsyncThunk(
+  'hr/fetchDocumentsByProfile',
+  async (profileId) => {
+    const res = await hrService.getDocumentsByProfileId(profileId);
+    return { profileId, documents: res };
+  }
+);
+
 const initialState = {
   dashboardStats: null,
   employees: [],
@@ -113,6 +121,7 @@ const initialState = {
   registrationTokens: [],
   loading: false,
   error: null,
+  documentsByEmployee: {},
 };
 
 const hrSlice = createSlice({
@@ -161,6 +170,10 @@ const hrSlice = createSlice({
       .addCase(fetchRegistrationTokens.fulfilled, (state, action) => {
         state.registrationTokens = action.payload.data;
       })
+      .addCase(fetchDocumentsByProfile.fulfilled, (state, action) => {
+  const { profileId, documents } = action.payload;
+  state.documentsByEmployee[profileId] = documents;
+})
       // Generic loading states
       .addMatcher(
                              // Matches any action that starts with 'hr/' and ends with '/pending'

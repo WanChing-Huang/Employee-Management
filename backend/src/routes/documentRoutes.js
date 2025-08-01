@@ -6,7 +6,8 @@ import {
   getVisaStatus,
   downloadTemplate,
   reviewVisaDocument,
-  sendReminder
+  sendReminder,
+  getDocumentsByProfileId
 } from '../controllers/documentController.js';
 import { auth, hrOnly } from '../middleware/auth.js';
 import { upload } from '../services/uploadService.js';
@@ -26,5 +27,6 @@ router.get('/template/:templateType', downloadTemplate);
 // HR routes
 router.post('/visa/:documentId/review', hrOnly, reviewVisaDocument);
 router.post('/reminder/:profileId', hrOnly, sendReminder);
+router.get('/by-profile/:profileId', hrOnly, getDocumentsByProfileId);
 
 export default router;

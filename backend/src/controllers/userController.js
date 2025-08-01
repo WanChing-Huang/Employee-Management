@@ -1,9 +1,9 @@
 import User from '../models/User.js';
-import UserProfile from '../models/UserProfile.js';
 import RegistrationToken from '../models/RegistrationToken.js';
 import { sendEmail } from '../services/emailService.js';
 import crypto from 'crypto';
 import jwt from 'jsonwebtoken';
+import UserProfile from '../models/UserProfile.js';
 
 // Generate registration token and send email 
 // (HR only)
@@ -194,9 +194,12 @@ export const registerUser = async (req, res) => {
     const userProfile = new UserProfile({
       user: user._id,
       email: user.email,
-      firstName: firstName || user.lastName||'',
-      lastName: lastName || user.lastName||'',
-      status: 'Pending'
+      firstName: firstName || user.lastName||'FirstName',
+      lastName: lastName || user.lastName||'LastName',
+      status: 'Start',
+       workAuthorization: {
+    isPermanentResidentOrCitizen: true, // or false, must be boolean
+  },
     });
 
     await userProfile.save();

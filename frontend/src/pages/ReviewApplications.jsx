@@ -37,7 +37,7 @@ import {
   Cancel,
   ArrowBack,
 } from '@mui/icons-material';
-import { fetchEmployeeProfile, reviewApplication } from '../store/hrSlice';
+import { fetchEmployeeProfile, reviewApplication, fetchDocumentsByProfile } from '../store/hrSlice';
 import StatusBadge from '../components/StatusBadge';
 import DocumentViewer from '../components/DocumentViewer';
 
@@ -54,7 +54,10 @@ const ReviewApplication = () => {
 
   useEffect(() => {
     dispatch(fetchEmployeeProfile(profileId));
+    dispatch(fetchDocumentsByProfile(profileId));
   }, [dispatch, profileId]);
+  const documents = useSelector((state) => state.hr.documentsByEmployee[profileId]);
+  
 
   const handleReview = async () => {
     try {
@@ -63,7 +66,7 @@ const ReviewApplication = () => {
         action: reviewAction,
         feedback: reviewAction === 'reject' ? feedback : '',
       })).unwrap();
-      
+
       setReviewDialog(false);
       navigate('/hr/hiring-management');
     } catch (error) {
@@ -84,7 +87,8 @@ const ReviewApplication = () => {
     );
   }
 
-  const { profile, documents } = selectedEmployee;
+  const { profile } = selectedEmployee;
+  
   const canReview = profile.status === 'Pending';
 
   return (
@@ -116,10 +120,10 @@ const ReviewApplication = () => {
         <Grid item xs={12} md={8}>
           <Paper sx={{ p: 3, mb: 3 }}>
             <Box display="flex" alignItems="center" gap={2} mb={3}>
-                {/* avatar and name */}
+              {/* avatar and name */}
               <Avatar
-                src={profile.profilePicture ? 
-                  `${import.meta.env.VITE_API_URL.replace('/api', '')}/uploads/${profile.profilePicture}` : 
+                src={profile.profilePicture ?
+                  `${import.meta.env.VITE_API_URL.replace('/api', '')}/uploads/${profile.profilePicture}` :
                   undefined
                 }
                 sx={{ width: 80, height: 80 }}
@@ -229,7 +233,7 @@ const ReviewApplication = () => {
                   </Typography>
                 )}
                 <Typography variant="body2" sx={{ mt: 1 }}>
-                  Valid: {new Date(profile.workAuthorization.startDate).toLocaleDateString()} - 
+                  Valid: {new Date(profile.workAuthorization.startDate).toLocaleDateString()} -
                   {new Date(profile.workAuthorization.endDate).toLocaleDateString()}
                 </Typography>
               </Box>
@@ -242,7 +246,7 @@ const ReviewApplication = () => {
               <ContactPhone sx={{ mr: 1, verticalAlign: 'middle' }} />
               Emergency Contacts & Reference
             </Typography>
-            
+
             <Typography variant="subtitle2" gutterBottom sx={{ mt: 2 }}>
               Reference
             </Typography>
@@ -344,8 +348,26 @@ const ReviewApplication = () => {
                   </Button>
                 </ListItem>
               )}
-              
-              {documents?.driverLicense && (
+
+              {Array.isArray(documents?.driverLicense) && documents.driverLicense.map((doc) => (
+                <ListItem key={doc._id}>
+                  <ListItemIcon>
+                    <InsertDriveFile />
+                  </ListItemIcon>
+                  <ListItemText primary="Driver's License" />
+                  <Button
+                    size="small"
+                    startIcon={<Visibility />}
+                    onClick={() => handleViewDocument({
+                      ...doc,
+                      type: "Driver's License"
+                    })}
+                  >
+                    View
+                  </Button>
+                </ListItem>
+              ))}
+              {/* {documents?.driverLicense && (
                 <ListItem>
                   <ListItemIcon>
                     <InsertDriveFile />
@@ -363,8 +385,8 @@ const ReviewApplication = () => {
                     View
                   </Button>
                 </ListItem>
-              )}
-              
+              )} */}
+
               {Array.isArray(documents?.visaDocuments) && documents.visaDocuments.map((doc) => (
                 <ListItem key={doc._id}>
                   <ListItemIcon>

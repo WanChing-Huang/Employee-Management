@@ -482,3 +482,21 @@ export const sendReminder = async (req, res, next) => {
     });
   }
 };
+
+// documentController.js
+export const getDocumentsByProfileId = async (req, res) => {
+  try {
+    const { profileId } = req.params;
+
+    const documents = await Document.findOne({ userProfile: profileId });
+
+    if (!documents) {
+      return res.status(404).json({ error: 'Documents not found' });
+    }
+
+    res.status(200).json(documents); // 回傳整份 document 結構給 HR
+  } catch (error) {
+    console.error('Error getting documents:', error);
+    res.status(500).json({ error: 'Failed to fetch documents' });
+  }
+};

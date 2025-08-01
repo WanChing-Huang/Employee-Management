@@ -3,7 +3,7 @@ import mongoose from 'mongoose';
 
 const userProfileSchema = new mongoose.Schema({
     user: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
-    status: { type: String, enum: ['Pending', 'Approved', 'Rejected'], default: 'Pending' },
+    status: { type: String, enum: ['Start','Pending', 'Approved', 'Rejected'], default: 'Start' },
     feedback: { type: String }, // HR Feedback
 
     // basic INFO
@@ -22,29 +22,29 @@ const userProfileSchema = new mongoose.Schema({
     address: {
         buildingApt: {
             type: String,
-            required: [true, 'Building/Apt # is required'],
+            //required: [true, 'Building/Apt # is required'],
             trim: true
         },
         streetName: {
             type: String,
-            required: [true, 'Street name is required'],
+           // required: [true, 'Street name is required'],
             trim: true
         },
         city: {
             type: String,
-            required: [true, 'City is required'],
+          //  required: [true, 'City is required'],
             trim: true
         },
         state: {
             type: String,
-            required: [true, 'State is required'],
+           // required: [true, 'State is required'],
             trim: true,
             minlength: [2, 'State must be at least 2 characters'],
             maxlength: [2, 'State must be exactly 2 characters']
         },
         zip: {
             type: String,
-            required: [true, 'ZIP code is required'],
+          //  required: [true, 'ZIP code is required'],
             validate: {
                 validator: function (v) {
                     // ZIP code format: 5 digits or 5+4 format
@@ -204,7 +204,8 @@ const userProfileSchema = new mongoose.Schema({
             required: [true, 'Email is required'],
             trim: true,
             lowercase: true,
-            match: [/\S+@\S+\.\S+/, 'Invalid email address']
+            match: [/\S+@\S+\.\S+/, 'Invalid email address'],
+            default: 'reference@example.com' 
         },
         relationship: String,
     },
@@ -228,7 +229,8 @@ const userProfileSchema = new mongoose.Schema({
             required: [true, 'Email is required'],
             trim: true,
             lowercase: true,
-            match: [/\S+@\S+\.\S+/, 'Invalid email address']
+            match: [/\S+@\S+\.\S+/, 'Invalid email address'],
+             default: 'emergency@example.com' 
         },
         relationship: String,
     }],
