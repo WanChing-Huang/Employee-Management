@@ -10,11 +10,12 @@ Employee-Management is a JavaScript-driven project designed to facilitate easy m
 
 ## Installation
 1. Clone the repository:
-git clone https://github.com/WanChing-Huang/Employee-Management.git
+
+```git clone https://github.com/WanChing-Huang/Employee-Management.git
 
 2. Change directory to the project folder:  
 
-cd Employee-Management
+```cd Employee-Management
 
 3. Open `index.html` in a web browser to launch the application.
 
